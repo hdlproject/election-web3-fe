@@ -1,237 +1,193 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Coins, TrendingUp, TrendingDown, Pause, Play } from "lucide-react";
-import { toast } from "sonner";
-import { useState } from "react";
-
-const mockTransactions = [
-  { type: "Mint", address: "0x1234...5678", amount: "10,000", date: "2024-03-15 10:30", hash: "0xabc...def" },
-  { type: "Burn", address: "0x8765...4321", amount: "5,000", date: "2024-03-14 14:20", hash: "0x123...456" },
-  { type: "Mint", address: "0xabcd...efgh", amount: "25,000", date: "2024-03-13 09:15", hash: "0x789...abc" },
-];
+import { Coins, TrendingUp, Flame, Plus, ArrowRight } from "lucide-react";
 
 export default function Treasury() {
-  const [mintData, setMintData] = useState({ address: "", amount: "" });
-  const [burnData, setBurnData] = useState({ address: "", amount: "" });
-
-  const handleMint = () => {
-    toast.success("Tokens minted successfully");
-    setMintData({ address: "", amount: "" });
-  };
-
-  const handleBurn = () => {
-    toast.success("Tokens burned successfully");
-    setBurnData({ address: "", amount: "" });
-  };
+  const [transactions] = useState([
+    { id: 1, type: "Mint", address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb", amount: "10,000", time: "2 hours ago" },
+    { id: 2, type: "Burn", address: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063", amount: "5,000", time: "5 hours ago" },
+    { id: 3, type: "Mint", address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", amount: "25,000", time: "1 day ago" },
+  ]);
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between animate-slide-in-left">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-success via-primary to-warning bg-clip-text text-transparent">
-            Treasury Management
-          </h1>
-          <p className="text-muted-foreground mt-2">Manage national currency (ERC20)</p>
+    <div className="relative">
+      {/* Hero Slide */}
+      <section className="slide-section bg-gradient-to-br from-green-500/10 via-background to-emerald-500/10">
+        <div className="slide-content animate-fade-in">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-600 mb-8 animate-bounce-in">
+              <Coins className="h-4 w-4" />
+              <span className="text-sm font-medium">Digital Currency Management</span>
+            </div>
+            <h1 className="hero-title text-6xl mb-6 animate-slide-up">
+              Treasury
+            </h1>
+            <p className="hero-subtitle text-3xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              Control your nation's digital currency supply
+            </p>
+          </div>
         </div>
-        <div className="flex gap-3 animate-scale-in">
-          <Button variant="outline" className="gap-2 hover-lift hover-glow">
-            <Pause className="h-4 w-4" />
-            Pause
-          </Button>
-          <Button variant="outline" className="gap-2 hover-lift hover-glow">
-            <Play className="h-4 w-4" />
-            Unpause
-          </Button>
-        </div>
-      </div>
+      </section>
 
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="glass hover-lift hover-glow group overflow-hidden relative animate-scale-in stagger-1">
-          <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform">
-                <Coins className="h-6 w-6 text-primary animate-float" />
-              </div>
-              Total Supply
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-              1,234,567
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">National Currency Tokens</p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass hover-lift hover-glow group overflow-hidden relative animate-scale-in stagger-2">
-          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-success/10 group-hover:scale-110 transition-transform">
-                <TrendingUp className="h-6 w-6 text-success animate-float" style={{ animationDelay: "0.5s" }} />
-              </div>
-              Supply Cap
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-              10,000,000
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">Maximum allowed supply</p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass hover-lift hover-glow group overflow-hidden relative animate-scale-in stagger-3">
-          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-success/10 group-hover:scale-110 transition-transform">
-                <TrendingUp className="h-6 w-6 text-success animate-float" style={{ animationDelay: "1s" }} />
-              </div>
-              Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-3xl font-bold text-success animate-pulse-slow">Active</div>
-            <p className="text-sm text-muted-foreground mt-2">Contract is operational</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Mint & Burn Forms */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="glass-strong animate-slide-up overflow-hidden group hover-lift hover-glow border-2 border-transparent hover:border-success/30">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-success" />
-          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-success" />
-              Mint Tokens
-            </CardTitle>
-            <CardDescription>Create new tokens (President only)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 relative z-10">
-            <div className="space-y-2 animate-fade-in stagger-1">
-              <Label htmlFor="mint-address">Recipient Address</Label>
-              <Input
-                id="mint-address"
-                placeholder="0x..."
-                value={mintData.address}
-                onChange={(e) => setMintData({ ...mintData, address: e.target.value })}
-                className="hover-lift"
-              />
-            </div>
-            <div className="space-y-2 animate-fade-in stagger-2">
-              <Label htmlFor="mint-amount">Amount</Label>
-              <Input
-                id="mint-amount"
-                type="number"
-                placeholder="1000"
-                value={mintData.amount}
-                onChange={(e) => setMintData({ ...mintData, amount: e.target.value })}
-                className="hover-lift"
-              />
-            </div>
-            <Button onClick={handleMint} className="w-full bg-gradient-success hover-glow hover-scale">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Mint Tokens
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-strong animate-slide-up overflow-hidden group hover-lift hover-glow border-2 border-transparent hover:border-destructive/30" style={{ animationDelay: "0.1s" }}>
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-danger" />
-          <div className="absolute inset-0 bg-gradient-danger opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-destructive" />
-              Burn Tokens
-            </CardTitle>
-            <CardDescription>Destroy tokens (President only)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 relative z-10">
-            <div className="space-y-2 animate-fade-in stagger-1">
-              <Label htmlFor="burn-address">Account Address</Label>
-              <Input
-                id="burn-address"
-                placeholder="0x..."
-                value={burnData.address}
-                onChange={(e) => setBurnData({ ...burnData, address: e.target.value })}
-                className="hover-lift"
-              />
-            </div>
-            <div className="space-y-2 animate-fade-in stagger-2">
-              <Label htmlFor="burn-amount">Amount</Label>
-              <Input
-                id="burn-amount"
-                type="number"
-                placeholder="1000"
-                value={burnData.amount}
-                onChange={(e) => setBurnData({ ...burnData, amount: e.target.value })}
-                className="hover-lift"
-              />
-            </div>
-            <Button onClick={handleBurn} variant="destructive" className="w-full hover-glow hover-scale">
-              <TrendingDown className="h-4 w-4 mr-2" />
-              Burn Tokens
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Transaction History */}
-      <Card className="glass-strong animate-fade-in overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-primary to-destructive bg-[length:200%_100%] animate-gradient-shift" />
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>Latest mint and burn operations</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Transaction Hash</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockTransactions.map((tx, index) => (
-                <TableRow 
-                  key={index}
-                  className="hover:bg-accent/5 transition-all animate-fade-in group"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+      {/* Stats Slide */}
+      <section className="slide-section bg-gradient-to-br from-background via-green-500/5 to-background">
+        <div className="slide-content">
+          <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+            Treasury Overview
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              { label: "Total Supply", value: "1.2M", icon: Coins, gradient: "from-green-500 to-emerald-500" },
+              { label: "Circulating", value: "980K", icon: TrendingUp, gradient: "from-blue-500 to-cyan-500" },
+              { label: "Burned", value: "45K", icon: Flame, gradient: "from-orange-500 to-red-500" },
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card 
+                  key={stat.label}
+                  className="hover-lift glass-strong border-0 shadow-strong hover:shadow-glow overflow-hidden group animate-scale-in text-center"
+                  style={{ animationDelay: `${index * 0.15}s` }}
                 >
-                  <TableCell>
-                    <Badge 
-                      variant={tx.type === "Mint" ? "default" : "destructive"}
-                      className={`font-semibold hover-scale ${
-                        tx.type === "Mint" ? "bg-gradient-success" : "bg-gradient-danger"
-                      }`}
-                    >
-                      {tx.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono">{tx.address}</TableCell>
-                  <TableCell className="font-bold text-lg">{tx.amount}</TableCell>
-                  <TableCell className="text-muted-foreground">{tx.date}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground group-hover:text-primary transition-colors">
-                    {tx.hash}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  <CardHeader className="pb-4">
+                    <div className={`mx-auto p-4 rounded-2xl bg-gradient-to-br ${stat.gradient} mb-4 animate-float`}>
+                      <Icon className="h-8 w-8 text-white" />
+                    </div>
+                    <CardTitle className="text-5xl font-bold mb-2">{stat.value}</CardTitle>
+                    <p className="text-muted-foreground text-lg">{stat.label}</p>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Mint & Burn Slide */}
+      <section className="slide-section bg-gradient-to-br from-emerald-500/10 via-background to-green-500/10">
+        <div className="slide-content">
+          <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+            Manage Supply
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Mint Tokens */}
+            <Card className="glass-strong border-0 shadow-strong hover:shadow-glow overflow-hidden animate-fade-in p-8">
+              <CardHeader className="p-0 mb-6">
+                <CardTitle className="flex items-center gap-3 text-3xl">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                    <Plus className="h-6 w-6 text-white" />
+                  </div>
+                  Mint Tokens
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 p-0">
+                <div className="space-y-3">
+                  <Label htmlFor="mint-address" className="text-xl">Recipient Address</Label>
+                  <Input 
+                    id="mint-address" 
+                    placeholder="0x..." 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="mint-amount" className="text-xl">Amount</Label>
+                  <Input 
+                    id="mint-amount" 
+                    type="number" 
+                    placeholder="1000" 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <Button className="w-full hover-scale bg-gradient-success h-14 text-lg">
+                  Mint Tokens
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Burn Tokens */}
+            <Card className="glass-strong border-0 shadow-strong hover:shadow-glow overflow-hidden animate-fade-in p-8">
+              <CardHeader className="p-0 mb-6">
+                <CardTitle className="flex items-center gap-3 text-3xl">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-500">
+                    <Flame className="h-6 w-6 text-white" />
+                  </div>
+                  Burn Tokens
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 p-0">
+                <div className="space-y-3">
+                  <Label htmlFor="burn-address" className="text-xl">Holder Address</Label>
+                  <Input 
+                    id="burn-address" 
+                    placeholder="0x..." 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="burn-amount" className="text-xl">Amount</Label>
+                  <Input 
+                    id="burn-amount" 
+                    type="number" 
+                    placeholder="500" 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <Button className="w-full hover-scale bg-gradient-danger h-14 text-lg">
+                  Burn Tokens
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Transactions Slide */}
+      <section className="slide-section bg-gradient-to-br from-background via-emerald-500/5 to-background">
+        <div className="slide-content">
+          <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+            Recent Transactions
+          </h2>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {transactions.map((tx, index) => (
+              <Card 
+                key={tx.id}
+                className="hover-lift glass-strong border-0 shadow-smooth hover:shadow-glow overflow-hidden group animate-fade-in"
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
+                <CardHeader className="p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <div className={`p-4 rounded-2xl ${
+                        tx.type === "Mint" 
+                          ? "bg-gradient-to-br from-green-500 to-emerald-500" 
+                          : "bg-gradient-to-br from-orange-500 to-red-500"
+                      } animate-float`}>
+                        {tx.type === "Mint" ? (
+                          <Plus className="h-8 w-8 text-white" />
+                        ) : (
+                          <Flame className="h-8 w-8 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl mb-2">{tx.type}</CardTitle>
+                        <p className="text-lg font-mono text-muted-foreground">{tx.address}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold mb-1">{tx.amount}</p>
+                      <p className="text-sm text-muted-foreground">{tx.time}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,168 +1,111 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Play, Square, UserPlus, Vote } from "lucide-react";
-import { toast } from "sonner";
-
-const mockElectees = [
-  { address: "0x1234...5678", id: "CIT-001", age: 35, votes: 234 },
-  { address: "0x8765...4321", id: "CIT-002", age: 42, votes: 189 },
-  { address: "0xabcd...efgh", id: "CIT-003", age: 38, votes: 156 },
-];
+import { Vote, ArrowRight } from "lucide-react";
 
 export default function Elections() {
-  const handleStart = () => toast.success("Election started");
-  const handleFinish = () => toast.success("Election finished");
+  const [elections] = useState([
+    { id: 1, title: "Presidential Election 2024", candidates: 5, votes: 1234, status: "Active", endDate: "2024-04-15" },
+    { id: 2, title: "Finance Minister Vote", candidates: 3, votes: 892, status: "Active", endDate: "2024-04-20" },
+    { id: 3, title: "Policy Referendum", candidates: 2, votes: 567, status: "Completed", endDate: "2024-03-30" },
+  ]);
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between animate-slide-in-left">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Election Management
-          </h1>
-          <p className="text-muted-foreground mt-2">Manage elections and voting</p>
-        </div>
-        <div className="flex gap-3 animate-scale-in">
-          <Button onClick={handleStart} className="gap-2 bg-gradient-success hover-glow hover-scale shadow-strong">
-            <Play className="h-4 w-4" />
-            Start Election
-          </Button>
-          <Button onClick={handleFinish} variant="destructive" className="gap-2 hover-glow hover-scale shadow-strong">
-            <Square className="h-4 w-4" />
-            Finish Election
-          </Button>
-        </div>
-      </div>
-
-      {/* Status Card */}
-      <Card className="glass-strong animate-slide-up overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] animate-gradient-shift" />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Vote className="h-5 w-5 text-primary animate-float" />
-            Current Election Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-4">
-            <div className="animate-fade-in stagger-1">
-              <p className="text-sm text-muted-foreground mb-2">Status</p>
-              <Badge className="bg-gradient-success animate-pulse-slow shadow-glow">Active</Badge>
+    <div className="relative">
+      {/* Hero Slide */}
+      <section className="slide-section bg-gradient-to-br from-purple-500/10 via-background to-pink-500/10">
+        <div className="slide-content animate-fade-in">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 text-purple-600 mb-8 animate-bounce-in">
+              <Vote className="h-4 w-4" />
+              <span className="text-sm font-medium">Transparent Blockchain Voting</span>
             </div>
-            <div className="animate-fade-in stagger-2">
-              <p className="text-sm text-muted-foreground">Candidates</p>
-              <p className="text-3xl font-bold mt-1 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                3
-              </p>
-            </div>
-            <div className="animate-fade-in stagger-3">
-              <p className="text-sm text-muted-foreground">Total Votes</p>
-              <p className="text-3xl font-bold mt-1 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                579
-              </p>
-            </div>
-            <div className="animate-fade-in stagger-4">
-              <p className="text-sm text-muted-foreground">Leading Candidate</p>
-              <p className="text-lg font-semibold mt-1 font-mono text-primary">0x1234...5678</p>
-            </div>
+            <h1 className="hero-title text-6xl mb-6 animate-slide-up">
+              Elections
+            </h1>
+            <p className="hero-subtitle text-3xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              Democratic decision-making powered by smart contracts
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Quick Actions */}
-      <div className="grid gap-6 md:grid-cols-2 animate-fade-in">
-        <Card className="glass hover-lift hover-glow group overflow-hidden relative border-2 border-transparent hover:border-primary/50 transition-all">
-          <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10 group-hover:scale-110 transition-transform">
-                <UserPlus className="h-5 w-5 text-primary" />
-              </div>
-              Register Candidate
-            </CardTitle>
-            <CardDescription>Add a new candidate to the election</CardDescription>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <Button className="w-full bg-gradient-primary hover-glow hover-scale">Register as Electee</Button>
-          </CardContent>
-        </Card>
+      {/* Create Election Slide */}
+      <section className="slide-section bg-gradient-to-br from-background via-purple-500/5 to-background">
+        <div className="slide-content">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+              Create New Election
+            </h2>
+            <Card className="glass-strong border-0 shadow-strong hover:shadow-glow overflow-hidden animate-scale-in p-8">
+              <CardContent className="space-y-6 p-0">
+                <div className="space-y-3">
+                  <Label htmlFor="title" className="text-xl">Election Title</Label>
+                  <Input 
+                    id="title" 
+                    placeholder="e.g., Minister of Finance Election" 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="duration" className="text-xl">Duration (days)</Label>
+                  <Input 
+                    id="duration" 
+                    type="number" 
+                    placeholder="7" 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <Button className="w-full hover-scale bg-gradient-primary h-14 text-lg mt-8">
+                  Create Election
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
-        <Card className="glass hover-lift hover-glow group overflow-hidden relative border-2 border-transparent hover:border-accent/50 transition-all">
-          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-accent/10 group-hover:scale-110 transition-transform">
-                <Vote className="h-5 w-5 text-accent" />
-              </div>
-              Register Voter
-            </CardTitle>
-            <CardDescription>Add a new voter to the election</CardDescription>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <Button className="w-full bg-gradient-success hover-glow hover-scale">Register as Elector</Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Candidates List */}
-      <Card className="glass-strong animate-fade-in overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-primary to-accent bg-[length:200%_100%] animate-gradient-shift" />
-        <CardHeader>
-          <CardTitle>Election Candidates</CardTitle>
-          <CardDescription>All registered candidates and their vote counts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Citizen ID</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Votes</TableHead>
-                <TableHead>Percentage</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockElectees.map((electee, index) => {
-                const totalVotes = mockElectees.reduce((sum, e) => sum + e.votes, 0);
-                const percentage = ((electee.votes / totalVotes) * 100).toFixed(1);
-                const isLeading = index === 0;
-                
-                return (
-                  <TableRow 
-                    key={electee.address}
-                    className={`hover:bg-accent/5 transition-all animate-fade-in ${isLeading ? 'bg-primary/5' : ''}`}
-                    style={{ animationDelay: `${index * 0.15}s` }}
-                  >
-                    <TableCell className="font-mono">{electee.address}</TableCell>
-                    <TableCell className="font-semibold">{electee.id}</TableCell>
-                    <TableCell>{electee.age}</TableCell>
-                    <TableCell className="font-bold text-lg">{electee.votes}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden shadow-inner">
-                          <div 
-                            className={`h-full bg-gradient-primary rounded-full transition-all duration-1000 ease-out ${
-                              isLeading ? 'animate-pulse-slow shadow-glow' : ''
-                            }`}
-                            style={{ 
-                              width: `${percentage}%`,
-                              animationDelay: `${index * 0.2}s`
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-bold w-14 text-right">{percentage}%</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Active Elections Slide */}
+      <section className="slide-section bg-gradient-to-br from-pink-500/10 via-background to-purple-500/10">
+        <div className="slide-content">
+          <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+            Active Elections
+          </h2>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {elections.map((election, index) => (
+              <Card 
+                key={election.id}
+                className="hover-lift glass-strong border-0 shadow-smooth hover:shadow-glow overflow-hidden group animate-fade-in"
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
+                <CardHeader className="p-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <CardTitle className="text-3xl">{election.title}</CardTitle>
+                    <Badge 
+                      className={`text-base px-4 py-2 ${
+                        election.status === "Active" 
+                          ? "bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse-slow" 
+                          : "bg-secondary"
+                      }`}
+                    >
+                      {election.status}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-8 text-lg text-muted-foreground">
+                    <span>Candidates: <strong className="text-foreground">{election.candidates}</strong></span>
+                    <span>Votes: <strong className="text-foreground">{election.votes}</strong></span>
+                    <span>Ends: <strong className="text-foreground">{election.endDate}</strong></span>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

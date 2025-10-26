@@ -1,149 +1,116 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Award, UserPlus, UserMinus } from "lucide-react";
-import { toast } from "sonner";
-import { useState } from "react";
-
-const mockMinisters = [
-  { address: "0x1234...5678", tokenId: "1", role: "Minister of Finance", appointedDate: "2024-01-15" },
-  { address: "0x8765...4321", tokenId: "2", role: "Minister of Education", appointedDate: "2024-01-20" },
-  { address: "0xabcd...efgh", tokenId: "3", role: "Minister of Health", appointedDate: "2024-02-01" },
-];
+import { Award, ArrowRight } from "lucide-react";
 
 export default function Badges() {
-  const [formData, setFormData] = useState({ address: "", role: "" });
-
-  const handleAppoint = () => {
-    toast.success("Minister appointed successfully");
-    setFormData({ address: "", role: "" });
-  };
-
-  const handleDismiss = (address: string) => {
-    toast.success("Minister dismissed");
-  };
+  const [ministers] = useState([
+    { id: 1, position: "Minister of Finance", address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb", gradient: "from-blue-500 to-cyan-500" },
+    { id: 2, position: "Minister of Education", address: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063", gradient: "from-purple-500 to-pink-500" },
+    { id: 3, position: "Minister of Health", address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", gradient: "from-green-500 to-emerald-500" },
+  ]);
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="animate-slide-in-left">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-          Minister Badge Management
-        </h1>
-        <p className="text-muted-foreground mt-2">Appoint and dismiss ministers with NFT badges</p>
-      </div>
-
-      {/* Stats */}
-      <Card className="glass-strong hover-lift hover-glow animate-scale-in overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity" />
-        <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-warning/10 group-hover:scale-110 transition-transform">
-              <Award className="h-6 w-6 text-warning animate-float" />
+    <div className="relative">
+      {/* Hero Slide */}
+      <section className="slide-section bg-gradient-to-br from-amber-500/10 via-background to-orange-500/10">
+        <div className="slide-content animate-fade-in">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 text-amber-600 mb-8 animate-bounce-in">
+              <Award className="h-4 w-4" />
+              <span className="text-sm font-medium">NFT-Powered Credentials</span>
             </div>
-            Active Ministers
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="relative z-10">
-          <div className="text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {mockMinisters.length}
+            <h1 className="hero-title text-6xl mb-6 animate-slide-up">
+              Minister Badges
+            </h1>
+            <p className="hero-subtitle text-3xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              Digital credentials secured on the blockchain
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">Total badges issued</p>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Appoint Form */}
-      <Card className="glass-strong animate-slide-up overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning via-primary to-warning bg-[length:200%_100%] animate-gradient-shift" />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-primary" />
-            Appoint New Minister
-          </CardTitle>
-          <CardDescription>Mint a new minister badge NFT</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 animate-fade-in stagger-1">
-              <Label htmlFor="address">Wallet Address</Label>
-              <Input
-                id="address"
-                placeholder="0x..."
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="hover-lift"
-              />
-            </div>
-            <div className="space-y-2 animate-fade-in stagger-2">
-              <Label htmlFor="role">Minister Role</Label>
-              <Input
-                id="role"
-                placeholder="Minister of..."
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="hover-lift"
-              />
-            </div>
+      {/* Issue Badge Slide */}
+      <section className="slide-section bg-gradient-to-br from-background via-amber-500/5 to-background">
+        <div className="slide-content">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+              Issue New Badge
+            </h2>
+            <Card className="glass-strong border-0 shadow-strong hover:shadow-glow overflow-hidden animate-scale-in p-8">
+              <CardContent className="space-y-6 p-0">
+                <div className="space-y-3">
+                  <Label htmlFor="minister" className="text-xl">Minister Address</Label>
+                  <Input 
+                    id="minister" 
+                    placeholder="0x..." 
+                    className="glass h-14 text-lg"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="position" className="text-xl">Position</Label>
+                  <Select defaultValue="finance">
+                    <SelectTrigger className="glass h-14 text-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="finance">Minister of Finance</SelectItem>
+                      <SelectItem value="justice">Minister of Justice</SelectItem>
+                      <SelectItem value="education">Minister of Education</SelectItem>
+                      <SelectItem value="health">Minister of Health</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full hover-scale bg-gradient-primary h-14 text-lg mt-8">
+                  Issue Badge
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-          <Button onClick={handleAppoint} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
-            <Award className="h-4 w-4 mr-2" />
-            Appoint Minister
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Ministers List */}
-      <Card className="glass-strong animate-fade-in overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-warning to-primary bg-[length:200%_100%] animate-gradient-shift" />
-        <CardHeader>
-          <CardTitle>Current Ministers</CardTitle>
-          <CardDescription>All ministers with active badges</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Badge ID</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Appointed Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockMinisters.map((minister, index) => (
-                <TableRow 
-                  key={minister.tokenId}
-                  className="hover:bg-accent/5 transition-all animate-fade-in group"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <TableCell className="font-mono">{minister.address}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="hover-scale bg-warning/10 border-warning text-warning">
-                      #{minister.tokenId}
+      {/* Current Ministers Slide */}
+      <section className="slide-section bg-gradient-to-br from-orange-500/10 via-background to-amber-500/10">
+        <div className="slide-content">
+          <h2 className="text-5xl font-bold text-center mb-16 animate-fade-in">
+            Current Ministers
+          </h2>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {ministers.map((minister, index) => (
+              <Card 
+                key={minister.id}
+                className="hover-lift glass-strong border-0 shadow-smooth hover:shadow-glow overflow-hidden group animate-fade-in"
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
+                <CardHeader className="p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <div className={`p-4 rounded-2xl bg-gradient-to-br ${minister.gradient} animate-float`}>
+                        <Award className="h-8 w-8 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-3xl mb-2">{minister.position}</CardTitle>
+                        <p className="text-lg font-mono text-muted-foreground">
+                          {minister.address}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="text-base px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500">
+                      Active
                     </Badge>
-                  </TableCell>
-                  <TableCell className="font-semibold">{minister.role}</TableCell>
-                  <TableCell className="text-muted-foreground">{minister.appointedDate}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDismiss(minister.address)}
-                      className="hover-glow hover-scale"
-                    >
-                      <UserMinus className="h-4 w-4 mr-1" />
-                      Dismiss
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
