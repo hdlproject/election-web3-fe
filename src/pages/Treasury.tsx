@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Coins, TrendingUp, TrendingDown, Pause, Play } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -29,17 +30,19 @@ export default function Treasury() {
 
   return (
     <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-slide-in-left">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Treasury Management</h1>
-          <p className="text-muted-foreground mt-1">Manage national currency (ERC20)</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-success via-primary to-warning bg-clip-text text-transparent">
+            Treasury Management
+          </h1>
+          <p className="text-muted-foreground mt-2">Manage national currency (ERC20)</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+        <div className="flex gap-3 animate-scale-in">
+          <Button variant="outline" className="gap-2 hover-lift hover-glow">
             <Pause className="h-4 w-4" />
             Pause
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 hover-lift hover-glow">
             <Play className="h-4 w-4" />
             Unpause
           </Button>
@@ -48,67 +51,83 @@ export default function Treasury() {
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
+        <Card className="glass hover-lift hover-glow group overflow-hidden relative animate-scale-in stagger-1">
+          <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity" />
+          <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" />
+              <div className="p-2 rounded-xl bg-primary/10 group-hover:scale-110 transition-transform">
+                <Coins className="h-6 w-6 text-primary animate-float" />
+              </div>
               Total Supply
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">1,234,567</div>
-            <p className="text-sm text-muted-foreground mt-1">National Currency Tokens</p>
+          <CardContent className="relative z-10">
+            <div className="text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              1,234,567
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">National Currency Tokens</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="glass hover-lift hover-glow group overflow-hidden relative animate-scale-in stagger-2">
+          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
+          <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-success" />
+              <div className="p-2 rounded-xl bg-success/10 group-hover:scale-110 transition-transform">
+                <TrendingUp className="h-6 w-6 text-success animate-float" style={{ animationDelay: "0.5s" }} />
+              </div>
               Supply Cap
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">10,000,000</div>
-            <p className="text-sm text-muted-foreground mt-1">Maximum allowed supply</p>
+          <CardContent className="relative z-10">
+            <div className="text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              10,000,000
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">Maximum allowed supply</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="glass hover-lift hover-glow group overflow-hidden relative animate-scale-in stagger-3">
+          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
+          <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-warning" />
+              <div className="p-2 rounded-xl bg-success/10 group-hover:scale-110 transition-transform">
+                <TrendingUp className="h-6 w-6 text-success animate-float" style={{ animationDelay: "1s" }} />
+              </div>
               Status
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">Active</div>
-            <p className="text-sm text-muted-foreground mt-1">Contract is operational</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-bold text-success animate-pulse-slow">Active</div>
+            <p className="text-sm text-muted-foreground mt-2">Contract is operational</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Mint & Burn Forms */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
+        <Card className="glass-strong animate-slide-up overflow-hidden group hover-lift hover-glow border-2 border-transparent hover:border-success/30">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-success" />
+          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity" />
+          <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-success" />
               Mint Tokens
             </CardTitle>
             <CardDescription>Create new tokens (President only)</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+          <CardContent className="space-y-4 relative z-10">
+            <div className="space-y-2 animate-fade-in stagger-1">
               <Label htmlFor="mint-address">Recipient Address</Label>
               <Input
                 id="mint-address"
                 placeholder="0x..."
                 value={mintData.address}
                 onChange={(e) => setMintData({ ...mintData, address: e.target.value })}
+                className="hover-lift"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 animate-fade-in stagger-2">
               <Label htmlFor="mint-amount">Amount</Label>
               <Input
                 id="mint-amount"
@@ -116,34 +135,38 @@ export default function Treasury() {
                 placeholder="1000"
                 value={mintData.amount}
                 onChange={(e) => setMintData({ ...mintData, amount: e.target.value })}
+                className="hover-lift"
               />
             </div>
-            <Button onClick={handleMint} className="w-full">
+            <Button onClick={handleMint} className="w-full bg-gradient-success hover-glow hover-scale">
               <TrendingUp className="h-4 w-4 mr-2" />
               Mint Tokens
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="glass-strong animate-slide-up overflow-hidden group hover-lift hover-glow border-2 border-transparent hover:border-destructive/30" style={{ animationDelay: "0.1s" }}>
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-danger" />
+          <div className="absolute inset-0 bg-gradient-danger opacity-0 group-hover:opacity-10 transition-opacity" />
+          <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-destructive" />
               Burn Tokens
             </CardTitle>
             <CardDescription>Destroy tokens (President only)</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+          <CardContent className="space-y-4 relative z-10">
+            <div className="space-y-2 animate-fade-in stagger-1">
               <Label htmlFor="burn-address">Account Address</Label>
               <Input
                 id="burn-address"
                 placeholder="0x..."
                 value={burnData.address}
                 onChange={(e) => setBurnData({ ...burnData, address: e.target.value })}
+                className="hover-lift"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 animate-fade-in stagger-2">
               <Label htmlFor="burn-amount">Amount</Label>
               <Input
                 id="burn-amount"
@@ -151,9 +174,10 @@ export default function Treasury() {
                 placeholder="1000"
                 value={burnData.amount}
                 onChange={(e) => setBurnData({ ...burnData, amount: e.target.value })}
+                className="hover-lift"
               />
             </div>
-            <Button onClick={handleBurn} variant="destructive" className="w-full">
+            <Button onClick={handleBurn} variant="destructive" className="w-full hover-glow hover-scale">
               <TrendingDown className="h-4 w-4 mr-2" />
               Burn Tokens
             </Button>
@@ -162,7 +186,8 @@ export default function Treasury() {
       </div>
 
       {/* Transaction History */}
-      <Card>
+      <Card className="glass-strong animate-fade-in overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-primary to-destructive bg-[length:200%_100%] animate-gradient-shift" />
         <CardHeader>
           <CardTitle>Recent Transactions</CardTitle>
           <CardDescription>Latest mint and burn operations</CardDescription>
@@ -180,16 +205,27 @@ export default function Treasury() {
             </TableHeader>
             <TableBody>
               {mockTransactions.map((tx, index) => (
-                <TableRow key={index}>
+                <TableRow 
+                  key={index}
+                  className="hover:bg-accent/5 transition-all animate-fade-in group"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
                   <TableCell>
-                    <span className={`font-medium ${tx.type === "Mint" ? "text-success" : "text-destructive"}`}>
+                    <Badge 
+                      variant={tx.type === "Mint" ? "default" : "destructive"}
+                      className={`font-semibold hover-scale ${
+                        tx.type === "Mint" ? "bg-gradient-success" : "bg-gradient-danger"
+                      }`}
+                    >
                       {tx.type}
-                    </span>
+                    </Badge>
                   </TableCell>
                   <TableCell className="font-mono">{tx.address}</TableCell>
-                  <TableCell className="font-bold">{tx.amount}</TableCell>
-                  <TableCell>{tx.date}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground">{tx.hash}</TableCell>
+                  <TableCell className="font-bold text-lg">{tx.amount}</TableCell>
+                  <TableCell className="text-muted-foreground">{tx.date}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground group-hover:text-primary transition-colors">
+                    {tx.hash}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
