@@ -253,45 +253,6 @@ All colors MUST be HSL.
   .stagger-4 {
     animation-delay: 0.4s;
   }
-
-  /* Parallax Effects */
-  .parallax-layer {
-    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .parallax-slow {
-    transform: translateY(calc(var(--scroll) * 0.5px));
-  }
-
-  .parallax-medium {
-    transform: translateY(calc(var(--scroll) * 0.3px));
-  }
-
-  .parallax-fast {
-    transform: translateY(calc(var(--scroll) * 0.1px));
-  }
-
-  /* Presentation Slides */
-  .slide-section {
-    @apply min-h-screen flex items-center justify-center py-20 relative overflow-hidden;
-  }
-
-  .slide-content {
-    @apply max-w-6xl mx-auto px-8 relative z-10;
-  }
-
-  /* Hero Text */
-  .hero-title {
-    @apply text-6xl md:text-7xl lg:text-8xl font-bold mb-6;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-subtitle {
-    @apply text-2xl md:text-3xl lg:text-4xl text-muted-foreground mb-8;
-  }
 }
 
 @keyframes fadeIn {
