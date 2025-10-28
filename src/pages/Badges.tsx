@@ -6,34 +6,156 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Award, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+// Integrate chain-sdk (ensure it's linked/installed)
+import { setAddresses, getReadProvider, getBrowserProvider, badge } from "chain-sdk";
+import contractAddresses from "chain-sdk/contract_addresses.json";
+// Static resolution of badge contract address with env fallback
+const BADGE_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Badge || import.meta.env.VITE_BADGE_ADDRESS;
+if (BADGE_ADDRESS) {
+  setAddresses({ Badge: BADGE_ADDRESS });
+}
 
-const mockMinisters = [
-  { address: "0x1234...5678", tokenId: "1", role: "Minister of Finance", appointedDate: "2024-01-15" },
-  { address: "0x8765...4321", tokenId: "2", role: "Minister of Education", appointedDate: "2024-01-20" },
-  { address: "0xabcd...efgh", tokenId: "3", role: "Minister of Health", appointedDate: "2024-02-01" },
-];
+// Helper to normalize unknown error values
+function extractError(e: unknown): string {
+  if (typeof e === "string") return e;
+  if (e && typeof e === "object") {
+    const obj = e as { message?: string; reason?: string };
+    return obj.reason || obj.message || JSON.stringify(obj);
+  }
+  return "Unknown error";
+}
 
 export default function Badges() {
-  const [formData, setFormData] = useState({ address: "", role: "" });
+  // Form state for appointing a minister (role removed)
+  const [formData, setFormData] = useState({ address: "", tokenURI: "" });
+  // On-chain ministers state (role & appointedDate removed)
+  const [ministers, setMinisters] = useState<{
+    address: string;
+    tokenId: string;
+  }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [txPending, setTxPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAppoint = () => {
-    toast.success("Minister appointed successfully");
-    setFormData({ address: "", role: "" });
+  const rpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
+  if (!import.meta.env.VITE_RPC_URL) {
+    console.warn("[Badges] VITE_RPC_URL not defined; using fallback http://127.0.0.1:8545");
+  }
+
+  const refreshMinisters = useCallback(async () => {
+    if (!BADGE_ADDRESS) {
+      setError("Badge contract address not configured.");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const provider = getReadProvider(rpcUrl);
+      const code = await provider.getCode(BADGE_ADDRESS);
+      if (code === "0x") {
+        setError("No contract code at configured Badge address. Verify deployment & network.");
+        setLoading(false);
+        return;
+      }
+      const readBadge = badge.read(provider);
+      const addrs: string[] = await readBadge.getMinisters();
+      const tokenIds = await Promise.all(addrs.map(async (a) => {
+        try {
+          const id = await readBadge.getMinisterBadgeId(a);
+          return id?.toString?.() ?? "0";
+        } catch {
+          return "0";
+        }
+      }));
+      const rows = addrs.map((addr, i) => ({
+        address: addr,
+        tokenId: tokenIds[i]
+      }));
+      setMinisters(rows);
+    } catch (e: unknown) {
+      setError(extractError(e) || "Failed to load ministers");
+    } finally {
+      setLoading(false);
+    }
+  }, [rpcUrl]);
+
+  useEffect(() => {
+    refreshMinisters();
+  }, [refreshMinisters]);
+
+  const handleAppoint = async () => {
+    if (!formData.address || !formData.tokenURI) {
+      toast.error("Address and token URI are required");
+      return;
+    }
+    if (!BADGE_ADDRESS) {
+      toast.error("Badge contract address not set");
+      return;
+    }
+    const suppliedURI = formData.tokenURI.trim();
+    if (!/^ipfs:\/\/|^https?:\/\//i.test(suppliedURI)) {
+      toast("Warning: Token URI does not look like ipfs:// or http(s)://; continuing", { className: "text-yellow-600" });
+    }
+    try {
+      setTxPending(true);
+      setError(null);
+      const browserProvider = getBrowserProvider();
+      const writeBadge = await badge.write(browserProvider);
+      const tx = await writeBadge.appointMinister(formData.address, suppliedURI);
+      await tx.wait();
+      toast.success("Minister appointed successfully");
+      setFormData({ address: "", tokenURI: "" });
+      await refreshMinisters();
+    } catch (e: unknown) {
+      const msg = extractError(e) || "Appoint failed";
+      toast.error(msg);
+      setError(msg);
+    } finally {
+      setTxPending(false);
+    }
   };
 
-  const handleDismiss = (address: string) => {
-    toast.success("Minister dismissed");
+  const handleDismiss = async (address: string) => {
+    if (!BADGE_ADDRESS) {
+      toast.error("Badge contract address not set");
+      return;
+    }
+    try {
+      setTxPending(true);
+      setError(null);
+      const browserProvider = getBrowserProvider();
+      const writeBadge = await badge.write(browserProvider);
+      const tx = await writeBadge.dismissMinister(address);
+      await tx.wait();
+      toast.success("Minister dismissed");
+      await refreshMinisters();
+    } catch (e: unknown) {
+      const msg = extractError(e) || "Dismiss failed";
+      toast.error(msg);
+      setError(msg);
+    } finally {
+      setTxPending(false);
+    }
   };
 
   return (
     <div className="p-8 space-y-8">
+      {/* Header */}
       <div className="animate-slide-in-left">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
           Minister Badge Management
         </h1>
         <p className="text-muted-foreground mt-2">Appoint and dismiss ministers with NFT badges</p>
       </div>
+
+      {/* Status / Errors */}
+      {error && (
+        <div className="text-sm text-red-500 animate-fade-in">{error}</div>
+      )}
+      {loading && (
+        <div className="text-sm text-muted-foreground animate-pulse">Loading on-chain data...</div>
+      )}
 
       {/* Stats */}
       <Card className="glass-strong hover-lift hover-glow animate-scale-in overflow-hidden group">
@@ -48,13 +170,13 @@ export default function Badges() {
         </CardHeader>
         <CardContent className="relative z-10">
           <div className="text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {mockMinisters.length}
+            {ministers.length}
           </div>
-          <p className="text-sm text-muted-foreground mt-2">Total badges issued</p>
+          <p className="text-sm text-muted-foreground mt-2">Total badges issued (on-chain)</p>
         </CardContent>
       </Card>
 
-      {/* Appoint Form */}
+      {/* Appoint Form (role field removed) */}
       <Card className="glass-strong animate-slide-up overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning via-primary to-warning bg-[length:200%_100%] animate-gradient-shift" />
         <CardHeader>
@@ -74,22 +196,24 @@ export default function Badges() {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="hover-lift"
+                disabled={txPending}
               />
             </div>
             <div className="space-y-2 animate-fade-in stagger-2">
-              <Label htmlFor="role">Minister Role</Label>
+              <Label htmlFor="tokenURI">Token URI (IPFS / URL)</Label>
               <Input
-                id="role"
-                placeholder="Minister of..."
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                id="tokenURI"
+                placeholder="ipfs://CID or https://..."
+                value={formData.tokenURI}
+                onChange={(e) => setFormData({ ...formData, tokenURI: e.target.value })}
                 className="hover-lift"
+                disabled={txPending}
               />
             </div>
           </div>
-          <Button onClick={handleAppoint} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
+          <Button onClick={handleAppoint} disabled={txPending} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
             <Award className="h-4 w-4 mr-2" />
-            Appoint Minister
+            {txPending ? "Processing..." : "Appoint Minister"}
           </Button>
         </CardContent>
       </Card>
@@ -99,7 +223,7 @@ export default function Badges() {
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success via-warning to-primary bg-[length:200%_100%] animate-gradient-shift" />
         <CardHeader>
           <CardTitle>Current Ministers</CardTitle>
-          <CardDescription>All ministers with active badges</CardDescription>
+          <CardDescription>All ministers with active badges (live)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -107,32 +231,29 @@ export default function Badges() {
               <TableRow>
                 <TableHead>Address</TableHead>
                 <TableHead>Badge ID</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Appointed Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockMinisters.map((minister, index) => (
-                <TableRow 
-                  key={minister.tokenId}
+              {ministers.map((minister, index) => (
+                <TableRow
+                  key={minister.address + minister.tokenId}
                   className="hover:bg-accent/5 transition-all animate-fade-in group"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <TableCell className="font-mono">{minister.address}</TableCell>
+                  <TableCell className="font-mono truncate max-w-[160px]" title={minister.address}>{minister.address}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="hover-scale bg-warning/10 border-warning text-warning">
                       #{minister.tokenId}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-semibold">{minister.role}</TableCell>
-                  <TableCell className="text-muted-foreground">{minister.appointedDate}</TableCell>
                   <TableCell>
-                    <Button 
-                      variant="destructive" 
+                    <Button
+                      variant="destructive"
                       size="sm"
                       onClick={() => handleDismiss(minister.address)}
                       className="hover-glow hover-scale"
+                      disabled={txPending}
                     >
                       <UserMinus className="h-4 w-4 mr-1" />
                       Dismiss
@@ -140,6 +261,13 @@ export default function Badges() {
                   </TableCell>
                 </TableRow>
               ))}
+              {!loading && ministers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                    No ministers found on-chain.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
