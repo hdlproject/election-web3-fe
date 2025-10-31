@@ -247,13 +247,19 @@ export default function Treasury() {
 
   return (
     <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between animate-slide-in-left">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-success via-primary to-warning bg-clip-text text-transparent">
-            Treasury Management
-          </h1>
-          <p className="text-muted-foreground mt-2">Manage national currency (ERC20)</p>
-        </div>
+      {/* Page Header (standardized) */}
+      <div className="animate-slide-in-left">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+          Treasury Management
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          View supply stats and administer national currency (Money token)
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between animate-slide-in-left hidden">
+        {/* Legacy header controls retained but hidden; actions moved below */}
+        <div />
         <div className="flex gap-3 animate-scale-in">
           <Button onClick={refreshData} variant="outline" className="gap-2 hover-lift hover-glow" disabled={loading || txPending}>
             <RefreshCcw className="h-4 w-4" /> Refresh
@@ -265,6 +271,19 @@ export default function Treasury() {
             <Play className="h-4 w-4" /> Unpause
           </Button>
         </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex flex-wrap gap-3 animate-fade-in">
+        <Button onClick={refreshData} variant="outline" className="gap-2 hover-lift hover-glow" disabled={loading || txPending}>
+          <RefreshCcw className="h-4 w-4" /> Refresh
+        </Button>
+        <Button onClick={handlePause} variant="outline" className="gap-2 hover-lift hover-glow" disabled={txPending || paused || !isPresident}>
+          <Pause className="h-4 w-4" /> Pause
+        </Button>
+        <Button onClick={handleUnpause} variant="outline" className="gap-2 hover-lift hover-glow" disabled={txPending || !paused || !isPresident}>
+          <Play className="h-4 w-4" /> Unpause
+        </Button>
       </div>
 
       {error && <div className="text-sm text-red-500 animate-fade-in">{error}</div>}
