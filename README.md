@@ -30,10 +30,10 @@ git clone <YOUR_GIT_URL>
 cd <YOUR_PROJECT_NAME>
 
 # Step 3: Install the necessary dependencies.
-npm i
+yarn install
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+yarn dev
 ```
 
 **Edit a file directly in GitHub**
@@ -71,3 +71,76 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+# Deployment (Vercel)
+
+## Monorepo Structure
+This repository contains multiple packages:
+- `frontend` (Vite React app to deploy)
+- `chain-sdk` (local TypeScript library consumed by frontend)
+- `backend` (smart contracts & Truffle; not deployed to Vercel)
+
+## Build Flow on Vercel
+The frontend has a `prebuild` script that:
+1. Installs dependencies for `chain-sdk` via Yarn
+2. Builds `chain-sdk` (emits `dist/` with JS, types, and ABIs)
+Then Vite builds the frontend into `frontend/dist` using `yarn build`.
+
+## vercel.json
+A `vercel.json` file at repo root configures a static build using `frontend/package.json`.
+If you prefer configuring in the Vercel dashboard, you can omit `vercel.json` and set:
+- Root Directory: `frontend`
+- Install Command: `yarn install`
+- Build Command: `yarn build`
+- Output Directory: `dist`
+
+## Required Environment Variables
+Set these in Vercel Project Settings -> Environment Variables (do not rely on the sample values in vercel.json):
+- `VITE_RPC_URL` – Your public RPC endpoint (e.g. Alchemy / Infura / local gateway)
+- `VITE_CITIZENSHIP_ADDRESS`
+- `VITE_ELECTION_ADDRESS`
+- `VITE_BADGE_ADDRESS`
+- `VITE_MONEY_ADDRESS`
+
+Optionally you can omit addresses if `chain-sdk/contract_addresses.json` is kept in sync; the app falls back to that file.
+
+## Steps to Deploy
+1. Push these changes to your repository.
+2. In Vercel, create a new project from the repo.
+3. Ensure Node version is >= 18 (Project Settings -> General -> Node.js Version).
+4. Confirm `Install Command` is `yarn install` and `Build Command` is `yarn build`.
+5. Add environment variables listed above for Production (and Preview if needed).
+6. Deploy. Vercel runs `prebuild` (building `chain-sdk`) then `build` (Vite build) via Yarn.
+
+## Post-Deployment Verification
+After deployment, open the site and confirm:
+- No console errors regarding missing ABIs or addresses.
+- Network requests to RPC succeed (CORS or rate limits can cause errors).
+- Contract addresses resolve (check logs for warnings).
+
+## Common Issues
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| `MODULE_NOT_FOUND chain-sdk/dist` | `chain-sdk` not built before Vite | Ensure `prebuild` script present (already added) |
+| `yarn: command not found` | Previous `chain-sdk` prepare used yarn | We replaced with `npm run build` |
+| Empty contract addresses | Missing env vars & outdated `contract_addresses.json` | Provide env vars or run backend deployment scripts & sync ABIs |
+| RPC 429/403 errors | Rate limit or key invalid | Use dedicated RPC provider key |
+
+## Manual Trigger of ABI Sync (Optional)
+If you redeploy new contracts:
+```sh
+# From repo root
+yarn --cwd chain-sdk sync:abi
+```
+Then commit updated `chain-sdk/abi` & `contract_addresses.json`.
+
+## Local Production Build Test
+```sh
+cd frontend
+yarn install
+yarn build
+npx serve dist  # or any static file server
+```
+Visit http://localhost:3000 and verify functionality before pushing.
+
+---
