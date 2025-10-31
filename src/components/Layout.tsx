@@ -1,13 +1,13 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Vote, 
-  Award, 
+import {
+  LayoutDashboard,
+  Users,
+  Vote,
+  Award,
   Coins,
-  Wallet
+  Wallet as WalletIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -21,6 +21,7 @@ const navigation = [
   { name: "Elections", href: "/elections", icon: Vote },
   { name: "Minister Badges", href: "/badges", icon: Award },
   { name: "Treasury", href: "/treasury", icon: Coins },
+  { name: "Wallet", href: "/wallet", icon: WalletIcon },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -37,12 +38,12 @@ export default function Layout({ children }: LayoutProps) {
             </h1>
             <p className="text-sm text-sidebar-foreground/70 mt-1">Web3 Platform</p>
           </div>
-          
+
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
-              
+
               return (
                 <Link
                   key={item.name}
@@ -69,12 +70,12 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
 
           <div className="p-4 border-t border-sidebar-border animate-fade-in">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2 hover-glow hover-scale bg-gradient-to-r from-sidebar-primary/10 to-transparent hover:from-sidebar-primary/20 hover:to-transparent border-sidebar-primary/30" 
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 hover-glow hover-scale bg-gradient-to-r from-sidebar-primary/10 to-transparent hover:from-sidebar-primary/20 hover:to-transparent border-sidebar-primary/30"
               size="sm"
             >
-              <Wallet className="h-4 w-4" />
+              <WalletIcon className="h-4 w-4" />
               Connect Wallet
             </Button>
           </div>

@@ -10,6 +10,7 @@ import Elections from "./pages/Elections";
 import Badges from "./pages/Badges";
 import Treasury from "./pages/Treasury";
 import NotFound from "./pages/NotFound";
+import WalletPage from "./pages/Wallet";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/elections" element={<Elections />} />
             <Route path="/badges" element={<Badges />} />
             <Route path="/treasury" element={<Treasury />} />
+            <Route path="/wallet" element={<WalletPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
