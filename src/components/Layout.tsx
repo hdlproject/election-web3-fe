@@ -12,6 +12,15 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useWallet, shortenAddress } from "@/hooks/use-wallet";
+import { toast } from "sonner";
 
 interface LayoutProps {
   children: ReactNode;
@@ -29,6 +38,31 @@ const navigation = [
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // wallet state
+  const wallet = useWallet();
+
+  const explorerBase = (import.meta as any)?.env?.VITE_BLOCK_EXPLORER || "";
+  const openExplorer = () => {
+    if (!wallet.address) return;
+    if (!explorerBase) {
+      toast.info("No block explorer configured");
+      return;
+    }
+    window.open(
+      explorerBase.replace(/\/$/, "") + "/address/" + wallet.address,
+      "_blank"
+    );
+  };
+
+  const copyAddress = async () => {
+    if (!wallet.address) return;
+    try {
+      await navigator.clipboard.writeText(wallet.address);
+      toast.success("Address copied");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
@@ -46,13 +80,39 @@ export default function Layout({ children }: LayoutProps) {
         <h1 className="text-lg font-bold bg-gradient-to-r from-sidebar-primary to-accent bg-clip-text text-transparent">
           e-Government
         </h1>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 hover-glow hover-scale"
-        >
-          <WalletIcon className="h-4 w-4" /> Wallet
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={wallet.connecting}
+              className="gap-2 hover-glow hover-scale"
+            >
+              <WalletIcon className="h-4 w-4" />
+              {wallet.address
+                ? shortenAddress(wallet.address)
+                : wallet.connecting
+                ? "Connecting…"
+                : "Connect"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {wallet.address ? (
+              <>
+                <DropdownMenuItem onClick={copyAddress}>Copy Address</DropdownMenuItem>
+                <DropdownMenuItem onClick={openExplorer} disabled={!explorerBase}>View in Explorer</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={wallet.disconnect}>Disconnect</DropdownMenuItem>
+              </>
+            ) : (
+              <DropdownMenuItem onClick={() => wallet.connect()}>Connect Wallet</DropdownMenuItem>
+            )}
+            {wallet.error && <div className="px-2 py-1 text-xs text-red-500">{wallet.error}</div>}
+            {wallet.chainId != null && wallet.address && (
+              <div className="px-2 py-1 text-[10px] text-muted-foreground">Chain ID: {wallet.chainId}</div>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Sidebar (desktop) */}
@@ -98,14 +158,35 @@ export default function Layout({ children }: LayoutProps) {
             })}
           </nav>
           <div className="p-4 border-t border-sidebar-border animate-fade-in">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 hover-glow hover-scale bg-gradient-to-r from-sidebar-primary/10 to-transparent hover:from-sidebar-primary/20 hover:to-transparent border-sidebar-primary/30"
-              size="sm"
-            >
-              <WalletIcon className="h-4 w-4" />
-              Connect Wallet
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 hover-glow hover-scale bg-gradient-to-r from-sidebar-primary/10 to-transparent hover:from-sidebar-primary/20 hover:to-transparent border-sidebar-primary/30"
+                  size="sm"
+                  disabled={wallet.connecting}
+                >
+                  <WalletIcon className="h-4 w-4" />
+                  {wallet.address ? shortenAddress(wallet.address, 5) : wallet.connecting ? 'Connecting…' : 'Connect Wallet'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {wallet.address ? (
+                  <>
+                    <DropdownMenuItem onClick={copyAddress}>Copy Address</DropdownMenuItem>
+                    <DropdownMenuItem onClick={openExplorer} disabled={!explorerBase}>View in Explorer</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={wallet.disconnect}>Disconnect</DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem onClick={() => wallet.connect()}>Connect Wallet</DropdownMenuItem>
+                )}
+                {wallet.error && <div className="px-2 py-1 text-xs text-red-500">{wallet.error}</div>}
+                {wallet.chainId != null && wallet.address && (
+                  <div className="px-2 py-1 text-[10px] text-muted-foreground">Chain ID: {wallet.chainId}</div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </aside>
@@ -150,13 +231,34 @@ export default function Layout({ children }: LayoutProps) {
               })}
             </nav>
             <div className="p-3 border-t border-sidebar-border">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center gap-2"
-              >
-                <WalletIcon className="h-4 w-4" /> Connect Wallet
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-center gap-2"
+                    disabled={wallet.connecting}
+                  >
+                    <WalletIcon className="h-4 w-4" /> {wallet.address ? shortenAddress(wallet.address) : wallet.connecting ? 'Connecting…' : 'Connect Wallet'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {wallet.address ? (
+                    <>
+                      <DropdownMenuItem onClick={copyAddress}>Copy Address</DropdownMenuItem>
+                      <DropdownMenuItem onClick={openExplorer} disabled={!explorerBase}>View in Explorer</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={wallet.disconnect}>Disconnect</DropdownMenuItem>
+                    </>
+                  ) : (
+                    <DropdownMenuItem onClick={() => wallet.connect()}>Connect Wallet</DropdownMenuItem>
+                  )}
+                  {wallet.error && <div className="px-2 py-1 text-xs text-red-500">{wallet.error}</div>}
+                  {wallet.chainId != null && wallet.address && (
+                    <div className="px-2 py-1 text-[10px] text-muted-foreground">Chain ID: {wallet.chainId}</div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

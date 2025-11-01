@@ -43,6 +43,7 @@ export default function Citizenship() {
   const [txPending, setTxPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ownerAddress, setOwnerAddress] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false); // track if current signer is owner
   const rpcUrl = import.meta.env.VITE_RPC_URL;
 
   const fetchCitizens = useCallback(async () => {
@@ -108,6 +109,17 @@ export default function Citizenship() {
   }, [rpcUrl, electionContractInput]);
 
   useEffect(() => { fetchCitizens(); }, [fetchCitizens]);
+  // Capture signer & derive isOwner
+  useEffect(() => {
+    (async () => {
+      try {
+        const bp = getBrowserProvider();
+        const signer = await bp.getSigner();
+        const addr = await signer.getAddress();
+        if (ownerAddress) setIsOwner(ownerAddress.toLowerCase() === addr.toLowerCase());
+      } catch { setIsOwner(false); }
+    })();
+  }, [ownerAddress]);
 
   const ensureOwner = async (browserProvider: any): Promise<boolean> => {
     if (!ownerAddress) return false;
@@ -120,6 +132,7 @@ export default function Citizenship() {
   };
 
   const handleRegister = async () => {
+    if (!isOwner) { toast.error("Only contract owner can register citizens"); return; }
     if (!formData.address || !formData.id || !formData.age) {
       toast.error("All fields are required");
       return;
@@ -158,6 +171,7 @@ export default function Citizenship() {
   };
 
   const handleSetElectionContract = async () => {
+    if (!isOwner) { toast.error("Owner only action"); return; }
     if (!electionContractInput) { toast.error("Provide election contract address"); return; }
     if (!CITIZENSHIP_ADDRESS) { toast.error("Citizenship address missing"); return; }
     try {
@@ -175,6 +189,7 @@ export default function Citizenship() {
   };
 
   const handleAddElectionAdmin = async () => {
+    if (!isOwner) { toast.error("Owner only action"); return; }
     if (!adminAddressInput) { toast.error("Provide admin address"); return; }
     try {
       setTxPending(true);
@@ -192,6 +207,7 @@ export default function Citizenship() {
   };
 
   const handleRemoveElectionAdmin = async (address: string) => {
+    if (!isOwner) { toast.error("Owner only action"); return; }
     if (!address) return;
     try {
       setTxPending(true);
@@ -312,8 +328,8 @@ export default function Citizenship() {
               className="hover-lift"
             />
           </div>
-          <Button onClick={handleSetElectionContract} disabled={txPending} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
-            {txPending ? "Processing..." : "Set Election Contract"}
+          <Button onClick={handleSetElectionContract} disabled={txPending || !isOwner} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
+            {txPending ? "Processing..." : isOwner ? "Set Election Contract" : "Owner Only"}
           </Button>
         </CardContent>
       </Card>
@@ -365,9 +381,9 @@ export default function Citizenship() {
               />
             </div>
           </div>
-          <Button onClick={handleRegister} disabled={txPending} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
+          <Button onClick={handleRegister} disabled={txPending || !isOwner} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
             <UserPlus className="h-4 w-4 mr-2" />
-            {txPending ? "Processing..." : "Register Citizen"}
+            {txPending ? "Processing..." : isOwner ? "Register Citizen" : "Owner Only"}
           </Button>
         </CardContent>
       </Card>
@@ -396,8 +412,8 @@ export default function Citizenship() {
               />
             </div>
             <div className="flex items-end">
-              <Button onClick={handleAddElectionAdmin} disabled={txPending} className="bg-gradient-success hover-glow hover-scale w-full md:w-auto">
-                {txPending ? "Processing..." : "Add Admin"}
+              <Button onClick={handleAddElectionAdmin} disabled={txPending || !isOwner} className="bg-gradient-success hover-glow hover-scale w-full md:w-auto">
+                {txPending ? "Processing..." : isOwner ? "Add Admin" : "Owner Only"}
               </Button>
             </div>
           </div>
@@ -419,7 +435,7 @@ export default function Citizenship() {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleRemoveElectionAdmin(addr)}
-                        disabled={txPending}
+                        disabled={txPending || !isOwner}
                         className="hover-glow hover-scale"
                       >
                         <UserMinus className="h-4 w-4 mr-1" /> Remove
@@ -470,7 +486,7 @@ export default function Citizenship() {
                       variant={citizen.role === "President" ? "default" : citizen.role === "Election Admin" ? "secondary" : "outline"}
                       className="hover-scale"
                     >
-                      {citizen.role}
+                      {citizen.role}{isOwner && citizen.role === 'Citizen' && ' '}
                     </Badge>
                   </TableCell>
                 </TableRow>
