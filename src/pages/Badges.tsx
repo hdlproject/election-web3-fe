@@ -4,12 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Award, UserPlus, UserMinus } from "lucide-react";
+import { Award, UserPlus, UserMinus, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { setAddresses, getReadProvider, getBrowserProvider, badge, citizenship } from "chain-sdk";
 import { useWallet } from "@/hooks/use-wallet";
 import contractAddresses from "chain-sdk/contract_addresses.json";
+import { formatDistanceToNow } from 'date-fns';
+
 // Static resolution of badge contract address with env fallback
 const BADGE_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Badge || import.meta.env.VITE_BADGE_ADDRESS;
 const CITIZENSHIP_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Citizenship || import.meta.env.VITE_CITIZENSHIP_ADDRESS;
@@ -42,52 +44,55 @@ export default function Badges() {
   const [candidateIsCitizen, setCandidateIsCitizen] = useState<boolean | null>(null);
   const [candidateAlreadyMinister, setCandidateAlreadyMinister] = useState<boolean | null>(null);
   const [checkingCandidate, setCheckingCandidate] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // new
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null); // new
+  const firstLoadRef = useRef(true); // track initial load
+  const refreshingRef = useRef(false); // internal guard separate from state
 
   const rpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
   if (!import.meta.env.VITE_RPC_URL) {
     console.warn("[Badges] VITE_RPC_URL not defined; using fallback http://127.0.0.1:8545");
   }
 
-  const refreshMinisters = useCallback(async () => {
+  const refreshMinisters = useCallback(async (opts?: { showToast?: boolean }) => {
+    // Prevent overlapping calls using ref (avoids stale closure issues)
+    if (refreshingRef.current) return;
     if (!BADGE_ADDRESS) {
       setError("Badge contract address not configured.");
       return;
     }
+    const first = firstLoadRef.current;
+    refreshingRef.current = true;
+    setRefreshing(true);
+    if (first) setLoading(true);
     try {
-      setLoading(true);
       setError(null);
       const provider = getReadProvider(rpcUrl);
       const code = await provider.getCode(BADGE_ADDRESS);
       if (code === "0x") {
         setError("No contract code at configured Badge address. Verify deployment & network.");
-        setLoading(false);
-        return;
+        setMinisters([]);
+      } else {
+        const readBadge = badge.read(provider);
+        const addrs: string[] = await readBadge.getMinisters();
+        const tokenIds = await Promise.all(addrs.map(async (a) => {
+          try { const id = await readBadge.getMinisterBadgeId(a); return id?.toString?.() ?? "0"; } catch { return "0"; }
+        }));
+        setMinisters(addrs.map((addr, i) => ({ address: addr, tokenId: tokenIds[i] })));
+        if (opts?.showToast) toast.success('Minister list refreshed');
       }
-      const readBadge = badge.read(provider);
-      const addrs: string[] = await readBadge.getMinisters();
-      const tokenIds = await Promise.all(addrs.map(async (a) => {
-        try {
-          const id = await readBadge.getMinisterBadgeId(a);
-          return id?.toString?.() ?? "0";
-        } catch {
-          return "0";
-        }
-      }));
-      const rows = addrs.map((addr, i) => ({
-        address: addr,
-        tokenId: tokenIds[i]
-      }));
-      setMinisters(rows);
+      setLastUpdated(Date.now());
     } catch (e: unknown) {
       setError(extractError(e) || "Failed to load ministers");
     } finally {
-      setLoading(false);
+      refreshingRef.current = false;
+      setRefreshing(false);
+      if (first) { setLoading(false); firstLoadRef.current = false; }
     }
   }, [rpcUrl]);
 
-  useEffect(() => {
-    refreshMinisters();
-  }, [refreshMinisters]);
+  // Replace earlier effect
+  useEffect(() => { refreshMinisters(); }, [refreshMinisters]);
 
   const refreshPresident = useCallback(async () => {
     if (!wallet.address || !CITIZENSHIP_ADDRESS) { setIsPresident(false); return; }
@@ -118,13 +123,13 @@ export default function Badges() {
         const readCit = citizenship.read(provider);
         const readBadge = badge.read(provider);
         // citizen check
-        let citizenOk = false;
+        let citizenOk: boolean;
         try {
           const [id] = await readCit.getCitizen(addr);
           citizenOk = !!id && id.length > 0;
         } catch { citizenOk = false; }
         // minister check
-        let already = false;
+        let already: boolean;
         try {
           const mId = await readBadge.getMinisterBadgeId(addr);
           already = (mId && mId.toString() !== "0");
@@ -204,13 +209,25 @@ export default function Badges() {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
             Appoint and dismiss ministers with NFT badges
           </p>
-          <div className="mt-2 text-xs font-mono">
+          <div className="mt-2 text-xs font-mono space-y-1">
             {wallet.address ? (
               <span className={isPresident ? "text-green-600" : "text-yellow-600"}>
                 Connected: {wallet.address.substring(0, 10)}… ({isPresident ? "President" : "Not President"})
               </span>
             ) : <span className="text-red-600">Wallet not connected</span>}
+            {lastUpdated && <div className="text-muted-foreground">Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</div>}
           </div>
+        </div>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => refreshMinisters({ showToast: true })}
+            disabled={refreshing || txPending}
+            aria-busy={refreshing}
+            className="gap-2 hover-glow hover-scale flex-1 sm:flex-none"
+          >
+            <RefreshCcw className={"h-4 w-4 " + (refreshing ? 'animate-spin' : '')} /> {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
       </div>
       {error && (

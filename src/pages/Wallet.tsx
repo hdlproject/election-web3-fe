@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { setAddresses, getReadProvider, getBrowserProvider, money, citizenship } from "chain-sdk";
 import contractAddresses from "chain-sdk/contract_addresses.json";
 import { formatUnits, parseUnits, isAddress } from "ethers";
+import { formatDistanceToNow } from "date-fns"; // added for relative time
+import type { EventLog, Log } from "ethers";
 
 // Resolve contract addresses (fallback to env vars)
 const MONEY_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Money || import.meta.env.VITE_MONEY_ADDRESS;
@@ -43,6 +45,9 @@ export default function WalletPage() {
   const [txPending, setTxPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<TransferRow[]>([]);
+  const [refreshing, setRefreshing] = useState(false); // new
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null); // new
+  const firstLoadRef = useRef(true); // track initial load
 
   const rpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
   if (!import.meta.env.VITE_RPC_URL) console.warn("[Wallet] VITE_RPC_URL not defined; using local fallback");
@@ -95,15 +100,16 @@ export default function WalletPage() {
       merged.sort((a, b) => (b.l.blockNumber - a.l.blockNumber) || (b.l.index - a.l.index));
       const limited = merged.slice(0, 30);
       const rows: TransferRow[] = [];
+      const getArgs = (ev: EventLog | Log): readonly unknown[] => ('args' in ev ? (ev as EventLog).args : []);
       for (const entry of limited) {
         const ev = entry.l;
-        const args: any = ev.args;
-        const from: string = args?.[0] || "";
-        const to: string = args?.[1] || "";
-        const amount: bigint = args?.[2] || 0n;
+        const args = getArgs(ev);
+        const from: string = (args?.[0] as string) || "";
+        const to: string = (args?.[1] as string) || "";
+        const amount: bigint = (args?.[2] as bigint) || 0n;
         const other = entry.dir === "OUT" ? to : from;
         let date = "";
-        try { const blk = await provider.getBlock(ev.blockNumber); date = new Date(blk.timestamp * 1000).toISOString().replace("T", " ").slice(0, 16); } catch {}
+        try { const blk = await provider.getBlock(ev.blockNumber); date = new Date(blk.timestamp * 1000).toISOString().replace("T", " ").slice(0, 16); } catch (err) { /* block fetch failed */ }
         rows.push({
           direction: entry.dir,
           other,
@@ -131,12 +137,40 @@ export default function WalletPage() {
     })();
   }, []);
 
+  // Unified refresh (balance + citizenship + history)
+  const refreshAll = useCallback(async (opts?: { showToast?: boolean }) => {
+    if (!signerAddress) return;
+    const first = firstLoadRef.current;
+    setRefreshing(true);
+    if (first) setLoading(true);
+    try {
+      await Promise.all([
+        refreshBalance(),
+        refreshCitizenshipStatus(),
+        refreshHistory(),
+      ]);
+      setLastUpdated(Date.now());
+      if (opts?.showToast) toast.success("Wallet data refreshed");
+    } catch (e) {
+      const msg = extractError(e) || "Refresh failed";
+      toast.error(msg);
+      setError(msg);
+    } finally {
+      setRefreshing(false);
+      if (first) { setLoading(false); firstLoadRef.current = false; }
+    }
+  }, [signerAddress, refreshBalance, refreshCitizenshipStatus, refreshHistory]);
+
   // Refresh data when signer changes
   useEffect(() => {
-    refreshBalance();
-    refreshCitizenshipStatus();
-    refreshHistory();
-  }, [signerAddress, refreshBalance, refreshCitizenshipStatus, refreshHistory]);
+    if (signerAddress) {
+      refreshAll();
+    } else {
+      setBalance("0");
+      setHistory([]);
+      setIsCitizen(false);
+    }
+  }, [signerAddress, refreshAll]);
 
   const validateAmount = (val: string): bigint | null => {
     if (!val) return null;
@@ -172,8 +206,7 @@ export default function WalletPage() {
       await tx.wait();
       toast.success("Transfer successful");
       setForm({ to: "", amount: "" });
-      await refreshBalance();
-      await refreshHistory();
+      await refreshAll(); // use unified refresh
     } catch (e: unknown) {
       const msg = extractError(e) || "Transfer failed";
       toast.error(msg);
@@ -190,10 +223,20 @@ export default function WalletPage() {
             Wallet
           </h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">View balance and transfer Money tokens</p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground mt-1">Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</p>
+          )}
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
-          <Button onClick={() => { refreshBalance(); refreshHistory(); }} variant="outline" disabled={loading || txPending} className="gap-2 hover-glow hover-scale flex-1 sm:flex-none">
-            <RefreshCcw className="h-4 w-4" /> Refresh
+          <Button
+            onClick={() => refreshAll({ showToast: true })}
+            variant="outline"
+            disabled={refreshing || txPending || !signerAddress}
+            aria-busy={refreshing}
+            className="gap-2 hover-glow hover-scale flex-1 sm:flex-none"
+          >
+            <RefreshCcw className={"h-4 w-4 " + (refreshing ? "animate-spin" : "")} />
+            {refreshing ? "Refreshing..." : !signerAddress ? "Connect Wallet" : "Refresh"}
           </Button>
         </div>
       </div>

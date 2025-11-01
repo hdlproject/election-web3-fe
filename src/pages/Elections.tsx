@@ -4,11 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Play, Square, UserPlus, Vote, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { setAddresses, getReadProvider, getBrowserProvider, election, citizenship } from "chain-sdk";
 import contractAddresses from "chain-sdk/contract_addresses.json";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatDistanceToNow } from 'date-fns';
 
 // Resolve contract addresses (fallback to env vars if present)
 const ELECTION_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Election || import.meta.env.VITE_ELECTION_ADDRESS;
@@ -52,19 +53,24 @@ export default function Elections() {
   const [electeeAddressInput, setElecteeAddressInput] = useState<string>("");
   const [electorAddressInput, setElectorAddressInput] = useState<string>("");
   const [voteAddressInput, setVoteAddressInput] = useState<string>(""); // candidate address to vote for
+  const [refreshing, setRefreshing] = useState(false); // new
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null); // new
+  const firstLoadRef = useRef(true); // track initial load without depending on lastUpdated
 
   const rpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
   if (!import.meta.env.VITE_RPC_URL) {
     console.warn("[Elections] VITE_RPC_URL not defined; using fallback http://127.0.0.1:8545");
   }
 
-  const refreshElection = useCallback(async () => {
+  const refreshElection = useCallback(async (opts?: { showToast?: boolean }) => {
     if (!ELECTION_ADDRESS) {
       setError("Election contract address not configured.");
       return;
     }
+    const first = firstLoadRef.current;
+    setRefreshing(true);
+    if (first) setLoading(true);
     try {
-      setLoading(true);
       setError(null);
       const provider = getReadProvider(rpcUrl);
       const readElection = election.read(provider);
@@ -74,34 +80,22 @@ export default function Elections() {
       try {
         const [started, finished, leader, leaderVotes] = await readElection.getStatus();
         setStatus({ started, finished, leader, leaderVotes: Number(leaderVotes) });
-      } catch (e) {
-        console.warn("Failed to fetch status", e);
-      }
+      } catch (e) { console.warn("Failed to fetch status", e); }
 
       // Fetch electee addresses
       const addresses: string[] = await readElection.getElectees();
       // Parallel fetch detail per electee
       const rows: ElecteeRow[] = await Promise.all(addresses.map(async (addr) => {
-        try {
-          const [id, age, voteCount] = await readElection.getElectee(addr);
-          return { address: addr, id, age: Number(age), votes: Number(voteCount) };
-        } catch {
-          return { address: addr, id: "", age: 0, votes: 0 };
-        }
+        try { const [id, age, voteCount] = await readElection.getElectee(addr); return { address: addr, id, age: Number(age), votes: Number(voteCount) }; } catch { return { address: addr, id: "", age: 0, votes: 0 }; }
       }));
       // Fetch electors
       let electorRows: ElectorRow[] = [];
       try {
         const electorAddresses: string[] = await readElection.getElectors();
         electorRows = await Promise.all(electorAddresses.map(async (addr) => {
-          try {
-            const [id, age, alreadyElected] = await readElection.getElector(addr);
-            return { address: addr, id, age: Number(age), alreadyElected };
-          } catch {
-            return { address: addr, id: "", age: 0, alreadyElected: false };
-          }
+          try { const [id, age, alreadyElected] = await readElection.getElector(addr); return { address: addr, id, age: Number(age), alreadyElected }; } catch { return { address: addr, id: "", age: 0, alreadyElected: false }; }
         }));
-      } catch (err) { /* getElectors may fail if none */ }
+      } catch (e) { /* ignore electors fetch failure */ }
 
       // Determine admin (needs citizenship role check)
       try {
@@ -110,14 +104,20 @@ export default function Elections() {
           const has = await readCitizenship.hasRole(electionAdminRole, signerAddress);
           setIsAdmin(has);
         }
-      } catch (err) { /* admin role check failed or contract unsupported */ }
+      } catch {}
 
       setElectees(rows);
       setElectors(electorRows);
+      setLastUpdated(Date.now());
+      if (opts?.showToast) toast.success('Election data refreshed');
     } catch (e: unknown) {
       setError(extractError(e) || "Failed to load election data");
     } finally {
-      setLoading(false);
+      setRefreshing(false);
+      if (first) {
+        setLoading(false);
+        firstLoadRef.current = false;
+      }
     }
   }, [rpcUrl, signerAddress]);
 
@@ -287,10 +287,11 @@ export default function Elections() {
             Election Management
           </h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage elections and voting</p>
+          {lastUpdated && <p className="text-xs text-muted-foreground mt-1">Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</p>}
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button onClick={refreshElection} variant="outline" className="gap-2 hover-glow hover-scale flex-1 sm:flex-none" disabled={loading || txPending}>
-            <RefreshCcw className="h-4 w-4" /> Refresh
+          <Button onClick={() => refreshElection({ showToast: true })} variant="outline" className="gap-2 hover-glow hover-scale flex-1 sm:flex-none" disabled={refreshing || txPending} aria-busy={refreshing}>
+            <RefreshCcw className={"h-4 w-4 " + (refreshing ? 'animate-spin' : '')} /> {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button onClick={handleStart} className="gap-2 bg-gradient-success hover-glow hover-scale shadow-strong flex-1 sm:flex-none" disabled={txPending || status.started || !isAdmin}>
             <Play className="h-4 w-4" /> Start

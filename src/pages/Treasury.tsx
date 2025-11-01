@@ -6,10 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Coins, TrendingUp, TrendingDown, Pause, Play, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { setAddresses, getReadProvider, getBrowserProvider, money, citizenship } from "chain-sdk";
 import contractAddresses from "chain-sdk/contract_addresses.json";
 import { parseUnits, formatUnits, isAddress } from "ethers";
+import { formatDistanceToNow } from 'date-fns';
+import type { EventLog, Log } from "ethers";
 
 // Resolve contract addresses (fallback to env if missing)
 const MONEY_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Money || import.meta.env.VITE_MONEY_ADDRESS;
@@ -51,16 +53,21 @@ export default function Treasury() {
   const [loading, setLoading] = useState(false);
   const [txPending, setTxPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const firstLoadRef = useRef(true); // track initial load
 
   const rpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
   if (!import.meta.env.VITE_RPC_URL) {
     console.warn("[Treasury] VITE_RPC_URL not defined; fallback to http://127.0.0.1:8545");
   }
 
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (opts?: { showToast?: boolean }) => {
     if (!MONEY_ADDRESS) { setError("Money contract address not configured."); return; }
+    const first = firstLoadRef.current;
+    setRefreshing(true);
+    if (first) setLoading(true);
     try {
-      setLoading(true);
       setError(null);
       const provider = getReadProvider(rpcUrl);
       const readMoney = money.read(provider);
@@ -68,17 +75,16 @@ export default function Treasury() {
       try {
         const [supplyBN, capBN, pausedFlag, decs] = await Promise.all([
           readMoney.totalSupply(),
-            readMoney.cap(),
-            readMoney.paused(),
-            readMoney.decimals().catch(() => 18)
+          readMoney.cap(),
+          readMoney.paused(),
+          readMoney.decimals().catch(() => 18)
         ]);
-        setDecimals(Number(decs));
-        setTotalSupply(formatUnits(supplyBN, Number(decs)));
-        setCap(formatUnits(capBN, Number(decs)));
+        const decNum = Number(decs);
+        setDecimals(decNum);
+        setTotalSupply(formatUnits(supplyBN, decNum));
+        setCap(formatUnits(capBN, decNum));
         setPaused(Boolean(pausedFlag));
-      } catch (e) {
-        console.warn("Failed to fetch base Money data", e);
-      }
+      } catch (e) { console.warn("Failed to fetch base Money data", e); }
       // President fetch via citizenship
       if (CITIZENSHIP_ADDRESS) {
         try {
@@ -86,9 +92,7 @@ export default function Treasury() {
           const prez = await readCitizenship.getPresident();
           setPresidentAddress(prez);
           if (signerAddress) setIsPresident(prez.toLowerCase() === signerAddress.toLowerCase());
-        } catch (e) {
-          console.warn("Failed to fetch president", e);
-        }
+        } catch (e) { console.warn("Failed to fetch president", e); }
       }
       // Events (recent mint & burn)
       try {
@@ -98,43 +102,30 @@ export default function Treasury() {
           readMoney.queryFilter(mintFilter, 0, "latest"),
           readMoney.queryFilter(burnFilter, 0, "latest")
         ]);
-        // Combine & sort by block/tx index descending
         const allLogs = [...mintLogs.map(l => ({ l, type: "Mint" as const })), ...burnLogs.map(l => ({ l, type: "Burn" as const }))];
         allLogs.sort((a, b) => (b.l.blockNumber - a.l.blockNumber) || (b.l.index - a.l.index));
-        // Limit to last 25
         const sliced = allLogs.slice(0, 25);
-        // Resolve timestamps
         const provider2 = getReadProvider(rpcUrl);
         const rows: TxRow[] = [];
+        const getArgs = (ev: EventLog | Log): readonly unknown[] => ('args' in ev ? (ev as EventLog).args : []);
         for (const entry of sliced) {
-          const ev = entry.l;
-          let tsDate = "";
-          try {
-            const blk = await provider2.getBlock(ev.blockNumber);
-            tsDate = new Date(blk.timestamp * 1000).toISOString().replace("T", " ").slice(0, 16);
-          } catch { tsDate = ""; }
-          const args: any = ev.args; // event args indexing by ABI
-          const targetAddr = entry.type === "Mint" ? args?.[0] : args?.[0]; // both events first arg is affected address
-          const amount: bigint = args?.[1] ?? 0n;
-          const president: string = args?.[2] ?? "";
-          rows.push({
-            type: entry.type,
-            address: targetAddr,
-            amountRaw: amount,
-            amountFormatted: formatUnits(amount, decimals),
-            date: tsDate,
-            hash: ev.transactionHash,
-            president
-          });
+          const ev = entry.l; let tsDate = "";
+          try { const blk = await provider2.getBlock(ev.blockNumber); tsDate = new Date(blk.timestamp * 1000).toISOString().replace("T", " ").slice(0, 16); } catch (err) { /* block timestamp fetch failed */ }
+          const args = getArgs(ev);
+          const targetAddr = (args?.[0] as string) || "";
+          const amount = (args?.[1] as bigint) ?? 0n;
+          const president = (args?.[2] as string) || "";
+          rows.push({ type: entry.type, address: targetAddr, amountRaw: amount, amountFormatted: formatUnits(amount, decimals), date: tsDate, hash: ev.transactionHash, president });
         }
         setTransactions(rows);
-      } catch (e) {
-        console.warn("Failed to fetch events", e);
-      }
+      } catch (e) { console.warn("Failed to fetch events", e); }
+      setLastUpdated(Date.now());
+      if (opts?.showToast) toast.success('Treasury data refreshed');
     } catch (e: unknown) {
       setError(extractError(e) || "Failed to refresh treasury data");
     } finally {
-      setLoading(false);
+      setRefreshing(false);
+      if (first) { setLoading(false); firstLoadRef.current = false; }
     }
   }, [rpcUrl, signerAddress, decimals]);
 
@@ -251,9 +242,12 @@ export default function Treasury() {
         <div>
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">Treasury Management</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">View supply stats and administer national currency</p>
+          {lastUpdated && <p className="text-xs text-muted-foreground mt-1">Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}</p>}
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button onClick={refreshData} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={loading || txPending}><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+          <Button onClick={() => refreshData({ showToast: true })} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={refreshing || txPending} aria-busy={refreshing}>
+            <RefreshCcw className={"h-4 w-4 " + (refreshing ? 'animate-spin' : '')} /> {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
           <Button onClick={handlePause} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={txPending || paused || !isPresident}><Pause className="h-4 w-4" /> Pause</Button>
           <Button onClick={handleUnpause} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={txPending || !paused || !isPresident}><Play className="h-4 w-4" /> Unpause</Button>
         </div>
