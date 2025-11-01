@@ -140,16 +140,17 @@ export default function Badges() {
   };
 
   return (
-    <div className="p-8 space-y-8">
-      {/* Header */}
-      <div className="animate-slide-in-left">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-          Minister Badge Management
-        </h1>
-        <p className="text-muted-foreground mt-2">Appoint and dismiss ministers with NFT badges</p>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="animate-slide-in-left flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            Minister Badge Management
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
+            Appoint and dismiss ministers with NFT badges
+          </p>
+        </div>
       </div>
-
-      {/* Status / Errors */}
       {error && (
         <div className="text-sm text-red-500 animate-fade-in">{error}</div>
       )}
@@ -226,50 +227,52 @@ export default function Badges() {
           <CardDescription>All ministers with active badges (live)</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Badge ID</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ministers.map((minister, index) => (
-                <TableRow
-                  key={minister.address + minister.tokenId}
-                  className="hover:bg-accent/5 transition-all animate-fade-in group"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <TableCell className="font-mono truncate max-w-[160px]" title={minister.address}>{minister.address}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="hover-scale bg-warning/10 border-warning text-warning">
-                      #{minister.tokenId}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDismiss(minister.address)}
-                      className="hover-glow hover-scale"
-                      disabled={txPending}
-                    >
-                      <UserMinus className="h-4 w-4 mr-1" />
-                      Dismiss
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!loading && ministers.length === 0 && (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[560px]">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
-                    No ministers found on-chain.
-                  </TableCell>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Badge ID</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {ministers.map((minister, index) => (
+                  <TableRow
+                    key={minister.address + minister.tokenId}
+                    className="hover:bg-accent/5 transition-all animate-fade-in group"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <TableCell className="font-mono truncate max-w-[160px]" title={minister.address}>{minister.address}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="hover-scale bg-warning/10 border-warning text-warning">
+                        #{minister.tokenId}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDismiss(minister.address)}
+                        className="hover-glow hover-scale"
+                        disabled={txPending}
+                      >
+                        <UserMinus className="h-4 w-4 mr-1" />
+                        Dismiss
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!loading && ministers.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                      No ministers found on-chain.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

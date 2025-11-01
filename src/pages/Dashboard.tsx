@@ -233,22 +233,20 @@ export default function Dashboard() {
   })();
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="animate-slide-in-left flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="animate-slide-in-left flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-muted-foreground mt-2">Overview of on-chain governance & economy</p>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Overview of on-chain governance & economy</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" disabled={loading || txPending} onClick={() => refresh()} className="hover-glow hover-scale">Refresh</Button>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button variant="outline" disabled={loading || txPending} onClick={() => refresh()} className="hover-glow hover-scale flex-1 sm:flex-none">Refresh</Button>
         </div>
       </div>
-
       {error && <div className="text-sm text-red-500 animate-fade-in">{error}</div>}
       {loading && <div className="text-sm text-muted-foreground animate-pulse">Loading data from blockchain...</div>}
-
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {statItems.map((stat, index) => {
@@ -279,7 +277,6 @@ export default function Dashboard() {
           );
         })}
       </div>
-
       {/* Quick Actions (Write) */}
       <div className="grid gap-6 md:grid-cols-3 animate-fade-in">
         <Card className="glass hover-lift hover-glow group overflow-hidden relative border-2 border-transparent hover:border-primary/50 transition-all">

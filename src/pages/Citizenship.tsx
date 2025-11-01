@@ -212,18 +212,20 @@ export default function Citizenship() {
   const electionAdminsCount = electionAdmins.length; // Use full list including non-citizens
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="animate-slide-in-left">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-          Citizenship Management
-        </h1>
-        <p className="text-muted-foreground mt-2">Register citizens, manage election linkage & admins</p>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="animate-slide-in-left flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            Citizenship Management
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Register citizens, manage election linkage & admins</p>
+        </div>
       </div>
 
       {error && <div className="text-sm text-red-500 animate-fade-in">{error}</div>}
       {loading && <div className="text-sm text-muted-foreground animate-pulse">Loading on-chain data...</div>}
 
-      <div className="grid gap-6 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-4 md:grid-cols-2">
         <Card className="glass hover-lift group overflow-hidden relative animate-scale-in stagger-1">
           <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity" />
           <CardHeader className="relative z-10">
@@ -400,37 +402,39 @@ export default function Citizenship() {
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {electionAdmins.map((addr, i) => (
-                <TableRow key={addr} className="hover:bg-accent/5 transition-all animate-fade-in" style={{ animationDelay: `${i * 0.04}s` }}>
-                  <TableCell className="font-mono truncate max-w-[220px]" title={addr}>{addr}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRemoveElectionAdmin(addr)}
-                      disabled={txPending}
-                      className="hover-glow hover-scale"
-                    >
-                      <UserMinus className="h-4 w-4 mr-1" /> Remove
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!loading && electionAdmins.length === 0 && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground py-6">No election admins found.</TableCell>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {electionAdmins.map((addr, i) => (
+                  <TableRow key={addr} className="hover:bg-accent/5 transition-all animate-fade-in" style={{ animationDelay: `${i * 0.04}s` }}>
+                    <TableCell className="font-mono truncate max-w-[220px]" title={addr}>{addr}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveElectionAdmin(addr)}
+                        disabled={txPending}
+                        className="hover-glow hover-scale"
+                      >
+                        <UserMinus className="h-4 w-4 mr-1" /> Remove
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!loading && electionAdmins.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-6">No election admins found.</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -182,17 +182,17 @@ export default function WalletPage() {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between animate-slide-in-left">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-slide-in-left">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
             Wallet
           </h1>
-          <p className="text-muted-foreground mt-2">View balance and transfer Money tokens</p>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">View balance and transfer Money tokens</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={() => { refreshBalance(); refreshHistory(); }} variant="outline" disabled={loading || txPending} className="gap-2 hover-glow hover-scale">
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button onClick={() => { refreshBalance(); refreshHistory(); }} variant="outline" disabled={loading || txPending} className="gap-2 hover-glow hover-scale flex-1 sm:flex-none">
             <RefreshCcw className="h-4 w-4" /> Refresh
           </Button>
         </div>
@@ -285,40 +285,42 @@ export default function WalletPage() {
           <CardDescription>Latest incoming/outgoing Money movements</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Direction</TableHead>
-                <TableHead>Counterparty</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date (UTC)</TableHead>
-                <TableHead>Tx Hash</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.map((row, i) => (
-                <TableRow key={row.hash + i} className="hover:bg-accent/5 transition-all animate-fade-in" style={{ animationDelay: `${i * 0.04}s` }}>
-                  <TableCell>
-                    <Badge variant={row.direction === 'IN' ? 'secondary' : 'outline'} className={`flex items-center gap-1 font-semibold ${row.direction === 'IN' ? 'text-success' : 'text-warning'}`}>
-                      {row.direction === 'IN' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
-                      {row.direction}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono truncate max-w-[160px]" title={row.other}>{row.other}</TableCell>
-                  <TableCell className="font-bold">{row.amount}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.date || '-'}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground truncate max-w-[140px]" title={row.hash}>{row.hash}</TableCell>
-                </TableRow>
-              ))}
-              {history.length === 0 && (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[640px]">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
-                    No transfers found for this account.
-                  </TableCell>
+                  <TableHead>Direction</TableHead>
+                  <TableHead>Counterparty</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Date (UTC)</TableHead>
+                  <TableHead>Tx Hash</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {history.map((row, i) => (
+                  <TableRow key={row.hash + i} className="hover:bg-accent/5 transition-all animate-fade-in" style={{ animationDelay: `${i * 0.04}s` }}>
+                    <TableCell>
+                      <Badge variant={row.direction === 'IN' ? 'secondary' : 'outline'} className={`flex items-center gap-1 font-semibold ${row.direction === 'IN' ? 'text-success' : 'text-warning'}`}>
+                        {row.direction === 'IN' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                        {row.direction}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono truncate max-w-[160px]" title={row.other}>{row.other}</TableCell>
+                    <TableCell className="font-bold">{row.amount}</TableCell>
+                    <TableCell className="text-muted-foreground">{row.date || '-'}</TableCell>
+                    <TableCell className="font-mono text-muted-foreground truncate max-w-[140px]" title={row.hash}>{row.hash}</TableCell>
+                  </TableRow>
+                ))}
+                {history.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                      No transfers found for this account.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

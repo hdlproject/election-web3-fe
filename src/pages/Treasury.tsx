@@ -246,46 +246,18 @@ export default function Treasury() {
   const capPretty = Number(cap) ? Number(cap).toLocaleString() : cap;
 
   return (
-    <div className="p-8 space-y-8">
-      {/* Page Header (standardized) */}
-      <div className="animate-slide-in-left">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-          Treasury Management
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          View supply stats and administer national currency (Money token)
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between animate-slide-in-left hidden">
-        {/* Legacy header controls retained but hidden; actions moved below */}
-        <div />
-        <div className="flex gap-3 animate-scale-in">
-          <Button onClick={refreshData} variant="outline" className="gap-2 hover-lift hover-glow" disabled={loading || txPending}>
-            <RefreshCcw className="h-4 w-4" /> Refresh
-          </Button>
-          <Button onClick={handlePause} variant="outline" className="gap-2 hover-lift hover-glow" disabled={txPending || paused || !isPresident}>
-            <Pause className="h-4 w-4" /> Pause
-          </Button>
-          <Button onClick={handleUnpause} variant="outline" className="gap-2 hover-lift hover-glow" disabled={txPending || !paused || !isPresident}>
-            <Play className="h-4 w-4" /> Unpause
-          </Button>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-slide-in-left">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">Treasury Management</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">View supply stats and administer national currency</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={refreshData} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={loading || txPending}><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+          <Button onClick={handlePause} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={txPending || paused || !isPresident}><Pause className="h-4 w-4" /> Pause</Button>
+          <Button onClick={handleUnpause} variant="outline" className="gap-2 hover-lift hover-glow flex-1 sm:flex-none" disabled={txPending || !paused || !isPresident}><Play className="h-4 w-4" /> Unpause</Button>
         </div>
       </div>
-
-      {/* Action Bar */}
-      <div className="flex flex-wrap gap-3 animate-fade-in">
-        <Button onClick={refreshData} variant="outline" className="gap-2 hover-lift hover-glow" disabled={loading || txPending}>
-          <RefreshCcw className="h-4 w-4" /> Refresh
-        </Button>
-        <Button onClick={handlePause} variant="outline" className="gap-2 hover-lift hover-glow" disabled={txPending || paused || !isPresident}>
-          <Pause className="h-4 w-4" /> Pause
-        </Button>
-        <Button onClick={handleUnpause} variant="outline" className="gap-2 hover-lift hover-glow" disabled={txPending || !paused || !isPresident}>
-          <Play className="h-4 w-4" /> Unpause
-        </Button>
-      </div>
-
       {error && <div className="text-sm text-red-500 animate-fade-in">{error}</div>}
       {loading && <div className="text-sm text-muted-foreground animate-pulse">Loading treasury data...</div>}
 
@@ -437,48 +409,50 @@ export default function Treasury() {
           <CardDescription>Latest on-chain mint and burn events</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date (UTC)</TableHead>
-                <TableHead>Tx Hash</TableHead>
-                <TableHead>President</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((tx, index) => (
-                <TableRow
-                  key={tx.hash + index}
-                  className="hover:bg-accent/5 transition-all animate-fade-in group"
-                  style={{ animationDelay: `${index * 0.04}s` }}
-                >
-                  <TableCell>
-                    <Badge
-                      variant={tx.type === 'Mint' ? 'default' : 'destructive'}
-                      className={`font-semibold hover-scale ${tx.type === 'Mint' ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
-                    >
-                      {tx.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono truncate max-w-[140px]" title={tx.address}>{tx.address}</TableCell>
-                  <TableCell className="font-bold text-lg">{tx.amountFormatted}</TableCell>
-                  <TableCell className="text-muted-foreground">{tx.date || '-'}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground group-hover:text-primary transition-colors truncate max-w-[140px]" title={tx.hash}>{tx.hash}</TableCell>
-                  <TableCell className="font-mono truncate max-w-[140px]" title={tx.president}>{tx.president || '-'}</TableCell>
-                </TableRow>
-              ))}
-              {!loading && transactions.length === 0 && (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[760px]">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                    No mint/burn events found.
-                  </TableCell>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Date (UTC)</TableHead>
+                  <TableHead>Tx Hash</TableHead>
+                  <TableHead>President</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((tx, index) => (
+                  <TableRow
+                    key={tx.hash + index}
+                    className="hover:bg-accent/5 transition-all animate-fade-in group"
+                    style={{ animationDelay: `${index * 0.04}s` }}
+                  >
+                    <TableCell>
+                      <Badge
+                        variant={tx.type === 'Mint' ? 'default' : 'destructive'}
+                        className={`font-semibold hover-scale ${tx.type === 'Mint' ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
+                      >
+                        {tx.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono truncate max-w-[140px]" title={tx.address}>{tx.address}</TableCell>
+                    <TableCell className="font-bold text-lg">{tx.amountFormatted}</TableCell>
+                    <TableCell className="text-muted-foreground">{tx.date || '-'}</TableCell>
+                    <TableCell className="font-mono text-muted-foreground group-hover:text-primary transition-colors truncate max-w-[140px]" title={tx.hash}>{tx.hash}</TableCell>
+                    <TableCell className="font-mono truncate max-w-[140px]" title={tx.president}>{tx.president || '-'}</TableCell>
+                  </TableRow>
+                ))}
+                {!loading && transactions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                      No mint/burn events found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

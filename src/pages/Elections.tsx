@@ -280,30 +280,26 @@ export default function Elections() {
   const leaderDisplay = status.leader ? `${status.leader.slice(0, 6)}...${status.leader.slice(-4)}` : "-";
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between animate-slide-in-left">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-slide-in-left">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
             Election Management
           </h1>
-          <p className="text-muted-foreground mt-2">Manage elections and voting</p>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage elections and voting</p>
         </div>
-        <div className="flex gap-3 animate-scale-in">
-          <Button onClick={refreshElection} variant="outline" className="gap-2 hover-glow hover-scale" disabled={loading || txPending}>
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={refreshElection} variant="outline" className="gap-2 hover-glow hover-scale flex-1 sm:flex-none" disabled={loading || txPending}>
+            <RefreshCcw className="h-4 w-4" /> Refresh
           </Button>
-          <Button onClick={handleStart} className="gap-2 bg-gradient-success hover-glow hover-scale shadow-strong" disabled={txPending || status.started || !isAdmin}>
-            <Play className="h-4 w-4" />
-            Start Election
+          <Button onClick={handleStart} className="gap-2 bg-gradient-success hover-glow hover-scale shadow-strong flex-1 sm:flex-none" disabled={txPending || status.started || !isAdmin}>
+            <Play className="h-4 w-4" /> Start
           </Button>
-          <Button onClick={handleFinish} variant="destructive" className="gap-2 hover-glow hover-scale shadow-strong" disabled={txPending || !status.started || status.finished || !isAdmin}>
-            <Square className="h-4 w-4" />
-            Finish Election
+          <Button onClick={handleFinish} variant="destructive" className="gap-2 hover-glow hover-scale shadow-strong flex-1 sm:flex-none" disabled={txPending || !status.started || status.finished || !isAdmin}>
+            <Square className="h-4 w-4" /> Finish
           </Button>
         </div>
       </div>
-
       {error && <div className="text-sm text-red-500 animate-fade-in">{error}</div>}
       {loading && <div className="text-sm text-muted-foreground animate-pulse">Loading election data...</div>}
 
@@ -453,99 +449,98 @@ export default function Elections() {
           <CardDescription>All registered candidates and their vote counts (live)</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Citizen ID</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Votes</TableHead>
-                <TableHead>Percentage</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {electees.map((electee, index) => {
-                const percentage = totalVotes > 0 ? ((electee.votes / totalVotes) * 100).toFixed(1) : "0.0";
-                const isLeader = status.leader && electee.address.toLowerCase() === status.leader.toLowerCase();
-                return (
-                  <TableRow
-                    key={electee.address}
-                    className={`hover:bg-accent/5 transition-all animate-fade-in ${isLeader ? 'bg-primary/5' : ''}`}
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <TableCell className="font-mono truncate max-w-[160px]" title={electee.address}>{electee.address}</TableCell>
-                    <TableCell className="font-semibold">{electee.id || '-'}</TableCell>
-                    <TableCell>{electee.age || '-'}</TableCell>
-                    <TableCell className="font-bold text-lg">{electee.votes}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className={`h-full bg-gradient-primary rounded-full transition-all duration-700 ease-out ${isLeader ? 'animate-pulse-slow shadow-glow' : ''}`}
-                            style={{ width: `${percentage}%` }}
-                          />
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[720px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Citizen ID</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Votes</TableHead>
+                  <TableHead>Percentage</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {electees.map((electee, index) => {
+                  const percentage = totalVotes > 0 ? ((electee.votes / totalVotes) * 100).toFixed(1) : "0.0";
+                  const isLeader = status.leader && electee.address.toLowerCase() === status.leader.toLowerCase();
+                  return (
+                    <TableRow
+                      key={electee.address}
+                      className={`hover:bg-accent/5 transition-all animate-fade-in ${isLeader ? 'bg-primary/5' : ''}`}
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
+                      <TableCell className="font-mono truncate max-w-[160px]" title={electee.address}>{electee.address}</TableCell>
+                      <TableCell className="font-semibold">{electee.id || '-'}</TableCell>
+                      <TableCell>{electee.age || '-'}</TableCell>
+                      <TableCell className="font-bold text-lg">{electee.votes}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden shadow-inner">
+                            <div
+                              className={`h-full bg-gradient-primary rounded-full transition-all duration-700 ease-out ${isLeader ? 'animate-pulse-slow shadow-glow' : ''}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-bold w-14 text-right">{percentage}%</span>
                         </div>
-                        <span className="text-sm font-bold w-14 text-right">{percentage}%</span>
-                      </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {!loading && electees.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                      No candidates registered on-chain.
                     </TableCell>
                   </TableRow>
-                );
-              })}
-              {!loading && electees.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
-                    No candidates registered on-chain.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
       {/* Electors List (below candidates) */}
       <Card className="glass-strong animate-fade-in overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-success to-accent bg-[length:200%_100%] animate-gradient-shift" />
-        <CardHeader>
-          <CardTitle>Registered Electors</CardTitle>
-          <CardDescription>All voters and whether they have cast a vote</CardDescription>
-        </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Citizen ID</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Voted</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {electors.map((elector, index) => (
-                <TableRow
-                  key={elector.address}
-                  className="hover:bg-accent/5 transition-all animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <TableCell className="font-mono truncate max-w-[160px]" title={elector.address}>{elector.address}</TableCell>
-                  <TableCell className="font-semibold">{elector.id || '-'}</TableCell>
-                  <TableCell>{elector.age || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={elector.alreadyElected ? 'secondary' : 'outline'} className={elector.alreadyElected ? 'bg-success/20 text-success hover-scale' : 'hover-scale'}>
-                      {elector.alreadyElected ? 'Yes' : 'No'}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!loading && electors.length === 0 && (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[600px]">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                    No electors registered on-chain.
-                  </TableCell>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Citizen ID</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Voted</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {electors.map((elector, index) => (
+                  <TableRow
+                    key={elector.address}
+                    className="hover:bg-accent/5 transition-all animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <TableCell className="font-mono truncate max-w-[160px]" title={elector.address}>{elector.address}</TableCell>
+                    <TableCell className="font-semibold">{elector.id || '-'}</TableCell>
+                    <TableCell>{elector.age || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={elector.alreadyElected ? 'secondary' : 'outline'} className={elector.alreadyElected ? 'bg-success/20 text-success hover-scale' : 'hover-scale'}>
+                        {elector.alreadyElected ? 'Yes' : 'No'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!loading && electors.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      No electors registered on-chain.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
