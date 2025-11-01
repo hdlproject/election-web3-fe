@@ -7,14 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Award, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect, useCallback } from "react";
-// Integrate chain-sdk (ensure it's linked/installed)
-import { setAddresses, getReadProvider, getBrowserProvider, badge } from "chain-sdk";
+import { setAddresses, getReadProvider, getBrowserProvider, badge, citizenship } from "chain-sdk";
+import { useWallet } from "@/hooks/use-wallet";
 import contractAddresses from "chain-sdk/contract_addresses.json";
 // Static resolution of badge contract address with env fallback
 const BADGE_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Badge || import.meta.env.VITE_BADGE_ADDRESS;
-if (BADGE_ADDRESS) {
-  setAddresses({ Badge: BADGE_ADDRESS });
-}
+const CITIZENSHIP_ADDRESS: string | undefined = (contractAddresses as Record<string, string>).Citizenship || import.meta.env.VITE_CITIZENSHIP_ADDRESS;
+if (BADGE_ADDRESS) { setAddresses({ Badge: BADGE_ADDRESS }); }
+if (CITIZENSHIP_ADDRESS) { setAddresses({ Citizenship: CITIZENSHIP_ADDRESS }); }
 
 // Helper to normalize unknown error values
 function extractError(e: unknown): string {
@@ -37,6 +37,11 @@ export default function Badges() {
   const [loading, setLoading] = useState(false);
   const [txPending, setTxPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const wallet = useWallet();
+  const [isPresident, setIsPresident] = useState(false);
+  const [candidateIsCitizen, setCandidateIsCitizen] = useState<boolean | null>(null);
+  const [candidateAlreadyMinister, setCandidateAlreadyMinister] = useState<boolean | null>(null);
+  const [checkingCandidate, setCheckingCandidate] = useState(false);
 
   const rpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
   if (!import.meta.env.VITE_RPC_URL) {
@@ -84,15 +89,67 @@ export default function Badges() {
     refreshMinisters();
   }, [refreshMinisters]);
 
+  const refreshPresident = useCallback(async () => {
+    if (!wallet.address || !CITIZENSHIP_ADDRESS) { setIsPresident(false); return; }
+    try {
+      const provider = getReadProvider(rpcUrl);
+      const readCit = citizenship.read(provider);
+      const presAddr = await readCit.getPresident().catch(async () => {
+        // fallback to hasRole if getPresident not present
+        const role = await readCit.PRESIDENT();
+        const has = await readCit.hasRole(role, wallet.address);
+        return has ? wallet.address : "0x0000000000000000000000000000000000000000";
+      });
+      setIsPresident(presAddr.toLowerCase() === wallet.address.toLowerCase());
+    } catch { setIsPresident(false); }
+  }, [wallet.address, rpcUrl]);
+
+  useEffect(() => { refreshPresident(); }, [refreshPresident]);
+
+  // Candidate validation (citizen + not minister)
+  useEffect(() => {
+    const addr = formData.address.trim();
+    if (!addr || !CITIZENSHIP_ADDRESS || !BADGE_ADDRESS) { setCandidateIsCitizen(null); setCandidateAlreadyMinister(null); return; }
+    let cancelled = false;
+    (async () => {
+      setCheckingCandidate(true);
+      try {
+        const provider = getReadProvider(rpcUrl);
+        const readCit = citizenship.read(provider);
+        const readBadge = badge.read(provider);
+        // citizen check
+        let citizenOk = false;
+        try {
+          const [id] = await readCit.getCitizen(addr);
+          citizenOk = !!id && id.length > 0;
+        } catch { citizenOk = false; }
+        // minister check
+        let already = false;
+        try {
+          const mId = await readBadge.getMinisterBadgeId(addr);
+          already = (mId && mId.toString() !== "0");
+        } catch { already = false; }
+        if (!cancelled) {
+          setCandidateIsCitizen(citizenOk);
+          setCandidateAlreadyMinister(already);
+        }
+      } catch {
+        if (!cancelled) { setCandidateIsCitizen(null); setCandidateAlreadyMinister(null); }
+      } finally { if (!cancelled) setCheckingCandidate(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [formData.address, rpcUrl]);
+
   const handleAppoint = async () => {
+    // Pre-validation according to smart contract rules
+    if (!wallet.address) { toast.error("Connect wallet first"); return; }
+    if (!isPresident) { toast.error("Only the President can appoint ministers"); return; }
     if (!formData.address || !formData.tokenURI) {
       toast.error("Address and token URI are required");
       return;
     }
-    if (!BADGE_ADDRESS) {
-      toast.error("Badge contract address not set");
-      return;
-    }
+    if (candidateIsCitizen === false) { toast.error("Target address is not a registered citizen"); return; }
+    if (candidateAlreadyMinister === true) { toast.error("Address already has a minister badge"); return; }
     const suppliedURI = formData.tokenURI.trim();
     if (!/^ipfs:\/\/|^https?:\/\//i.test(suppliedURI)) {
       toast("Warning: Token URI does not look like ipfs:// or http(s)://; continuing", { className: "text-yellow-600" });
@@ -117,10 +174,8 @@ export default function Badges() {
   };
 
   const handleDismiss = async (address: string) => {
-    if (!BADGE_ADDRESS) {
-      toast.error("Badge contract address not set");
-      return;
-    }
+    if (!wallet.address) { toast.error("Connect wallet first"); return; }
+    if (!isPresident) { toast.error("Only the President can dismiss ministers"); return; }
     try {
       setTxPending(true);
       setError(null);
@@ -149,6 +204,13 @@ export default function Badges() {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
             Appoint and dismiss ministers with NFT badges
           </p>
+          <div className="mt-2 text-xs font-mono">
+            {wallet.address ? (
+              <span className={isPresident ? "text-green-600" : "text-yellow-600"}>
+                Connected: {wallet.address.substring(0, 10)}… ({isPresident ? "President" : "Not President"})
+              </span>
+            ) : <span className="text-red-600">Wallet not connected</span>}
+          </div>
         </div>
       </div>
       {error && (
@@ -189,6 +251,7 @@ export default function Badges() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
+            {/* Address Input */}
             <div className="space-y-2 animate-fade-in stagger-1">
               <Label htmlFor="address">Wallet Address</Label>
               <Input
@@ -199,7 +262,16 @@ export default function Badges() {
                 className="hover-lift"
                 disabled={txPending}
               />
+              {formData.address && (
+                <div className="text-[11px] font-medium">
+                  {checkingCandidate && <span className="text-muted-foreground">Checking candidate...</span>}
+                  {!checkingCandidate && candidateIsCitizen === false && <span className="text-red-500">Not a citizen</span>}
+                  {!checkingCandidate && candidateIsCitizen === true && candidateAlreadyMinister === false && <span className="text-green-600">Citizen ✅</span>}
+                  {!checkingCandidate && candidateAlreadyMinister === true && <span className="text-yellow-600">Already a minister</span>}
+                </div>
+              )}
             </div>
+            {/* Token URI */}
             <div className="space-y-2 animate-fade-in stagger-2">
               <Label htmlFor="tokenURI">Token URI (IPFS / URL)</Label>
               <Input
@@ -212,9 +284,13 @@ export default function Badges() {
               />
             </div>
           </div>
-          <Button onClick={handleAppoint} disabled={txPending} className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale">
+          <Button
+            onClick={handleAppoint}
+            disabled={txPending || !wallet.address || !isPresident || candidateAlreadyMinister === true || candidateIsCitizen === false || checkingCandidate}
+            className="w-full md:w-auto bg-gradient-primary hover-glow hover-scale"
+          >
             <Award className="h-4 w-4 mr-2" />
-            {txPending ? "Processing..." : "Appoint Minister"}
+            {txPending ? "Processing..." : !wallet.address ? "Connect Wallet" : !isPresident ? "President Required" : candidateAlreadyMinister ? "Already Minister" : candidateIsCitizen === false ? "Not Citizen" : "Appoint Minister"}
           </Button>
         </CardContent>
       </Card>
@@ -245,9 +321,7 @@ export default function Badges() {
                   >
                     <TableCell className="font-mono truncate max-w-[160px]" title={minister.address}>{minister.address}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="hover-scale bg-warning/10 border-warning text-warning">
-                        #{minister.tokenId}
-                      </Badge>
+                      <Badge variant="outline" className="hover-scale bg-warning/10 border-warning text-warning">#{minister.tokenId}</Badge>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -255,10 +329,10 @@ export default function Badges() {
                         size="sm"
                         onClick={() => handleDismiss(minister.address)}
                         className="hover-glow hover-scale"
-                        disabled={txPending}
+                        disabled={txPending || !wallet.address || !isPresident}
                       >
                         <UserMinus className="h-4 w-4 mr-1" />
-                        Dismiss
+                        {isPresident ? "Dismiss" : "President Required"}
                       </Button>
                     </TableCell>
                   </TableRow>
